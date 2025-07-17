@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const path = require('path');
 const { pathPrefix } = require('./gatsby-config.js');
 const { globSync }= require('glob');
