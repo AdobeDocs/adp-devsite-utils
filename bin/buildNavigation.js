@@ -6,7 +6,9 @@ import fs from 'node:fs';
 // subPages:((\s* .*)*)
 
 try {
-    const { siteMetadata, pathPrefix } = await import('./gatsby-config.js');
+    const currentDir = process.cwd();
+    const filePath = path.join(currentDir, 'gatsby-config.js');
+    const { siteMetadata, pathPrefix } = await import(filePath);
 
     if(!pathPrefix) {
         throw new TypeError("pathPrefix not found");
