@@ -10,7 +10,7 @@
     "buildNavigation": "./bin/buildNavigation.js",
     "buildRedirections": "./bin/buildRedirections.js",
     "buildSiteWideBanner": "./bin/buildSiteWideBanner.js",
-    "buildCheckLinks": "./bin/check-links.js",
+    "checkLinks": "./bin/check-links.js",
     "renameFiles": "./bin/renameFiles.js"
   },
   "author": "",
