@@ -4,7 +4,9 @@ import path from 'path';
 import fs from 'node:fs';
 
 try {
-  const { siteMetadata } = await import('./gatsby-config.js');
+  const currentDir = process.cwd();
+  const filePath = path.join(currentDir, 'gatsby-config.js');
+  const { siteMetadata } = await import(filePath);
 
   let sideWideBanner = ``;
   if (siteMetadata.siteWideBanner) {

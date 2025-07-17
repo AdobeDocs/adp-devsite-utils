@@ -3,7 +3,10 @@
 import path from 'path';
 
 try {
-    const { pathPrefix } = await import('./gatsby-config.js');
+    const currentDir = process.cwd();
+    const filePath = path.join(currentDir, 'gatsby-config.js');
+    const { pathPrefix } = await import(filePath);
+
     const { globSync } = await import('glob');
     const { writeRedirectionsFile } = await import('./scriptUtils.js');
 
