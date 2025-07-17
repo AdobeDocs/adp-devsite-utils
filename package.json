@@ -14,5 +14,8 @@
     "renameFiles": "./bin/renameFiles.js"
   },
   "author": "",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
 }
