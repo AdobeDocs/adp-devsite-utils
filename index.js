@@ -1,1 +1,1 @@
-// noop
+console.log('test')
