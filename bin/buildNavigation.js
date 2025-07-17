@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const fs = require('node:fs');
+import path from 'path';
+import fs from 'node:fs';
 // regex to find sections:
 // subPages:((\s* .*)*)
 
-const { siteMetadata, pathPrefix } = require('./gatsby-config.js');
-
 try {
+    const { siteMetadata, pathPrefix } = await import('./gatsby-config.js');
+
     if(!pathPrefix) {
         throw new TypeError("pathPrefix not found");
     } 

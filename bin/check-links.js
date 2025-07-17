@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const fetch = require('node-fetch');
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
 
 function getMarkdownFiles(dir, results = []) {
   if (!fs.existsSync(dir)) return results;

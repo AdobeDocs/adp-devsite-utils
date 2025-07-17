@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const { pathPrefix } = require('./gatsby-config.js');
-const { globSync }= require('glob');
-const { writeRedirectionsFile } = require('./scriptUtils.js');
+import path from 'path';
 
 try {
+    const { pathPrefix } = await import('./gatsby-config.js');
+    const { globSync } = await import('glob');
+    const { writeRedirectionsFile } = await import('./scriptUtils.js');
+
     if(!pathPrefix) {
         throw new TypeError("pathPrefix not found");
     } 

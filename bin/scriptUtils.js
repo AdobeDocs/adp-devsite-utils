@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const fs = require('node:fs');
-const { globSync } = require('glob');
+import path from 'path';
+import fs from 'node:fs';
+import { globSync } from 'glob';
 
 function getPathPrefixFromConfig() {
     const CONFIG_PATH = path.join('src', 'pages', 'config.md');
@@ -37,13 +37,13 @@ function getPathPrefixFromConfig() {
     return pathPrefixLine[2];
 }
 
-function getPathPrefixFromGatsbyConfig() {
-    const { pathPrefix } = require('./gatsby-config.js');
+async function getPathPrefixFromGatsbyConfig() {
+    const { pathPrefix } = await import('./gatsby-config.js');
     return pathPrefix;
 }
 
-function getPathPrefix() {
-    return getPathPrefixFromConfig() ?? getPathPrefixFromGatsbyConfig();
+async function getPathPrefix() {
+    return getPathPrefixFromConfig() ?? await getPathPrefixFromGatsbyConfig();
 }
 
 function getRedirectionsFilePath() {
@@ -109,7 +109,7 @@ function replaceLinksInString({ string, linkMap, getFindPattern, getReplacePatte
     return string;
 }
 
-module.exports = {
+export {
     getPathPrefix,
     getRedirectionsFilePath,
     readRedirectionsFile,

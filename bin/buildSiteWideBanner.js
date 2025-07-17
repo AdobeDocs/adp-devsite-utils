@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const fs = require('node:fs');
-
-const { siteMetadata } = require('./gatsby-config.js');
+import path from 'path';
+import fs from 'node:fs';
 
 try {
+  const { siteMetadata } = await import('./gatsby-config.js');
 
   let sideWideBanner = ``;
   if (siteMetadata.siteWideBanner) {

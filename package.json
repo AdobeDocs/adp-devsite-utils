@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A repo that contains helper scripts that help users build their EDS github sites.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,6 +13,9 @@
     "buildSiteWideBanner": "./bin/buildSiteWideBanner.js",
     "checkLinks": "./bin/check-links.js",
     "renameFiles": "./bin/renameFiles.js"
+  },
+  "scripts": {
+    "checkLinks": "./bin/check-links.js"
   },
   "author": "",
   "license": "Apache-2.0",
