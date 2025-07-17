@@ -1,0 +1,11 @@
+{
+  "name": "adp-devsite-utils",
+  "version": "1.0.0",
+  "description": "A repo that contains helper scripts that help users build their EDS github sites.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
