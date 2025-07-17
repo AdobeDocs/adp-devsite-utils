@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "checkLinks": "./bin/check-links.js"
   },
   "bin": {
     "buildNavigation": "./bin/buildNavigation.js",
@@ -14,12 +14,10 @@
     "checkLinks": "./bin/check-links.js",
     "renameFiles": "./bin/renameFiles.js"
   },
-  "scripts": {
-    "checkLinks": "./bin/check-links.js"
-  },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "glob": "^11.0.3",
     "node-fetch": "^3.3.2"
   }
 }
