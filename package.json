@@ -9,7 +9,8 @@
     "buildRedirections": "./bin/buildRedirections.js",
     "buildSiteWideBanner": "./bin/buildSiteWideBanner.js",
     "checkLinks": "./bin/check-links.js",
-    "renameFiles": "./bin/renameFiles.js"
+    "renameFiles": "./bin/renameFiles.js",
+    "test": "./bin/test.js"
   },
   "author": "",
   "license": "Apache-2.0",
