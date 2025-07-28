@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "checkLinks": "./bin/check-links.js"
+    "checkLinks": "./bin/check-links.js",
+    "test": "./test.js"
   },
   "bin": {
     "buildNavigation": "./bin/buildNavigation.js",
