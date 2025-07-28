@@ -4,9 +4,6 @@
   "description": "A repo that contains helper scripts that help users build their EDS github sites.",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-    "checkLinks": "./bin/check-links.js"
-  },
   "bin": {
     "buildNavigation": "./bin/buildNavigation.js",
     "buildRedirections": "./bin/buildRedirections.js",
