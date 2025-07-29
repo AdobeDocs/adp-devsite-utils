@@ -9,12 +9,7 @@
     "test": "./test.js"
   },
   "bin": {
-    "buildNavigation": "./bin/buildNavigation.js",
-    "buildRedirections": "./bin/buildRedirections.js",
-    "buildSiteWideBanner": "./bin/buildSiteWideBanner.js",
-    "checkLinks": "./bin/check-links.js",
-    "renameFiles": "./bin/renameFiles.js",
-    "test": "./test.js"
+    "adp-devsite-utils": "./bin/check-links.js"
   },
   "author": "",
   "license": "Apache-2.0",
