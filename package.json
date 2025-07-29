@@ -4,12 +4,18 @@
   "description": "A repo that contains helper scripts that help users build their EDS github sites.",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-    "checkLinks": "./bin/check-links.js",
-    "test": "./test.js"
-  },
   "bin": {
-    "adp-devsite-utils": "./bin/check-links.js"
+    "adp-devsite-utils": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "build-banner": "node index.js buildSiteWideBanner",
+    "build-nav": "node index.js buildNavigation",
+    "build-redirections": "node index.js buildRedirections",
+    "normalize-links": "node index.js normalizeLinks",
+    "rename-files": "node index.js renameFiles",
+    "check-links": "node index.js checkLinks",
+    "list": "node index.js"
   },
   "author": "",
   "license": "Apache-2.0",
