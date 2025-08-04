@@ -4,9 +4,10 @@ import fs from 'node:fs';
 import path from 'path'
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
+
+const __dirname = process.cwd();
+verbose(`Current directory: ${__dirname}`);
 
 try {
     logSection('BUILD NAVIGATION');
@@ -15,10 +16,7 @@ try {
     // regex to find sections:
     // subPages:((\s* .*)*)
 
-    const currentDir = process.cwd();
-    verbose(`Current directory: ${currentDir}`);
-
-    const filePath = path.join(currentDir, 'gatsby-config.js');
+    const filePath = path.join(__dirname, 'gatsby-config.js');
     verbose(`Loading gatsby-config.js from: ${filePath}`);
 
     const config = await import(filePath);
@@ -115,7 +113,7 @@ try {
         verbose('No subPages configuration found');
     }
 
-    let configFilePath = path.resolve(currentDir + '/src/pages/config.md');
+    let configFilePath = path.resolve(__dirname + '/src/pages/config.md');
     verbose(`Writing navigation config to: ${configFilePath}`);
     fs.writeFileSync(configFilePath, topNavMarkdown);
     verbose(`Navigation config written successfully (${topNavMarkdown.length} characters)`);

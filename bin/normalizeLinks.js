@@ -5,8 +5,6 @@ import matchAll from 'string.prototype.matchall';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const {
     getDeployableFiles,
     getMarkdownFiles,
@@ -19,6 +17,9 @@ const {
     logSection,
     logStep,
 } = await import('./scriptUtils.js');
+
+const __dirname = process.cwd();
+verbose(`Current directory: ${__dirname}`);
 
 try {
     logSection('NORMALIZE LINKS');
@@ -95,12 +96,12 @@ try {
         });
     }
 
-    logStep('Getting deployable files');
-    const files = getDeployableFiles();
+        logStep('Getting deployable files');
+    const files = getDeployableFiles(__dirname);
     verbose(`Found ${files.length} deployable files`);
 
     logStep('Processing markdown files');
-    const mdFiles = getMarkdownFiles();
+    const mdFiles = getMarkdownFiles(__dirname);
     verbose(`Processing ${mdFiles.length} markdown files`);
     mdFiles.forEach((mdFile, index) => {
         verbose(`Processing markdown file ${index + 1}/${mdFiles.length}: ${mdFile}`);

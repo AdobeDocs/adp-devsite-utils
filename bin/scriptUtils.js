@@ -5,9 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { globSync } from 'glob';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // Verbose logging utility
 const VERBOSE = process.env.VERBOSE === 'true' || process.argv.includes('--verbose') || process.argv.includes('-v');
 
@@ -91,17 +88,17 @@ async function getPathPrefix() {
     return getPathPrefixFromConfig() ?? await getPathPrefixFromGatsbyConfig();
 }
 
-function getRedirectionsFilePath() {
+function getRedirectionsFilePath(__dirname) {
     const redirectionsFilePath = path.join(__dirname, 'src', 'pages', 'redirects.json');
     return path.resolve(redirectionsFilePath);
 }
 
-function readRedirectionsFile() {
-    const redirectionsFilePath = getRedirectionsFilePath();
+function readRedirectionsFile(__dirname) {
+    const redirectionsFilePath = getRedirectionsFilePath(__dirname);
     return JSON.parse(fs.readFileSync(redirectionsFilePath)).data;
 }
 
-function writeRedirectionsFile(data) {
+function writeRedirectionsFile(data, __dirname) {
     let redirectionsData = {
         total: data.length,
         offset: 0,
@@ -110,22 +107,22 @@ function writeRedirectionsFile(data) {
         ':type': 'sheet',
     };
 
-    let redirectionsFilePath = getRedirectionsFilePath();
+    let redirectionsFilePath = getRedirectionsFilePath(__dirname);
     fs.writeFileSync(redirectionsFilePath, JSON.stringify(redirectionsData));
 }
 
-function getFiles(fileExtensions) {
+function getFiles(fileExtensions, __dirname) {
     const fileExtensionsPattern = fileExtensions.join('|');
     return globSync(__dirname + `/src/pages/**/*+(${fileExtensionsPattern})`).map((f) => path.relative(__dirname, f));
 }
 
-function getDeployableFiles() {
+function getDeployableFiles(__dirname) {
     // files types deployed to EDS in process-mds.sh
-    return getFiles(['.md', '.json']);
+    return getFiles(['.md', '.json'], __dirname);
 }
 
-function getMarkdownFiles() {
-    return getFiles(['.md']);
+function getMarkdownFiles(__dirname) {
+    return getFiles(['.md'], __dirname);
 }
 
 function removeFileExtension(file) {

@@ -3,9 +3,10 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
+
+const __dirname = process.cwd();
+verbose(`Current directory: ${__dirname}`);
 
 try {
     logSection('BUILD REDIRECTIONS');
@@ -81,7 +82,7 @@ try {
     verbose(`  Trailing slash redirects: ${trailingSlashRedirects}`);
 
     logStep('Writing redirections file');
-    writeRedirectionsFile(data);
+    writeRedirectionsFile(data, __dirname);
     verbose('Redirections file written successfully');
 
 } catch (err) {

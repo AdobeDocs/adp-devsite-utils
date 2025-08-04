@@ -4,8 +4,6 @@ import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const {
     getPathPrefix,
     readRedirectionsFile,
@@ -23,6 +21,9 @@ const {
     logSection,
     logStep,
 } = await import('./scriptUtils.js');
+
+const __dirname = process.cwd();
+verbose(`Current directory: ${__dirname}`);
 
 try {
 
@@ -181,7 +182,7 @@ try {
         const linkMap = getLinkMap(fileMap, dir);
         const newRedirects = [];
 
-        const currRedirects = readRedirectionsFile();
+        const currRedirects = readRedirectionsFile(__dirname);
         currRedirects.forEach(({ Source: currSource, Destination: currDestination }) => {
             const newSource = getRenamedUrl(currSource, patterns, linkMap);
             const newDestination = getRenamedUrl(currDestination, patterns, linkMap);
@@ -223,7 +224,7 @@ try {
             });
         });
 
-        writeRedirectionsFile(newRedirects);
+        writeRedirectionsFile(newRedirects, __dirname);
     }
 
     function deleteEmptyDirectoryUpwards(startDir, stopDir) {
@@ -278,15 +279,15 @@ try {
         verbose(`Cleaned up ${dirsRemoved} directories`);
     }
 
-    logStep('Getting deployable files');
-    const files = getDeployableFiles();
+        logStep('Getting deployable files');
+    const files = getDeployableFiles(__dirname);
     verbose(`Found ${files.length} deployable files`);
 
     logStep('Creating file map');
     const fileMap = getFileMap(files);
 
     logStep('Processing markdown files');
-    const mdFiles = getMarkdownFiles();
+    const mdFiles = getMarkdownFiles(__dirname);
     verbose(`Processing ${mdFiles.length} markdown files`);
     mdFiles.forEach((mdFile, index) => {
         verbose(`  Processing markdown file ${index + 1}/${mdFiles.length}: ${mdFile}`);
@@ -294,7 +295,7 @@ try {
     });
 
     logStep('Processing redirects file');
-    const redirectsFile = getRedirectionsFilePath();
+    const redirectsFile = getRedirectionsFilePath(__dirname);
     const pathPrefix = await getPathPrefix();
     verbose(`Path prefix: ${pathPrefix}`);
     if (fs.existsSync(redirectsFile)) {
