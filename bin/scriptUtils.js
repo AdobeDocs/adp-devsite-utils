@@ -1,12 +1,48 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
-import path from 'path'
+import path from 'path';
 import { fileURLToPath } from 'url';
 import { globSync } from 'glob';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Verbose logging utility
+const VERBOSE = process.env.VERBOSE === 'true' || process.argv.includes('--verbose') || process.argv.includes('-v');
+
+function log(message, level = 'info') {
+    const timestamp = new Date().toISOString();
+    const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+
+    if (level === 'error') {
+        console.error(`${prefix} ${message}`);
+    } else if (level === 'warn') {
+        console.warn(`${prefix} ${message}`);
+    } else {
+        console.log(`${prefix} ${message}`);
+    }
+}
+
+function verbose(message, level = 'info') {
+    if (VERBOSE) {
+        log(message, level);
+    }
+}
+
+function logSection(title) {
+    if (VERBOSE) {
+        log(`\n${'='.repeat(50)}`);
+        log(`SECTION: ${title}`);
+        log(`${'='.repeat(50)}`);
+    }
+}
+
+function logStep(step, details = '') {
+    if (VERBOSE) {
+        log(`STEP: ${step}${details ? ` - ${details}` : ''}`);
+    }
+}
 
 function getPathPrefixFromConfig() {
     const CONFIG_PATH = path.join('src', 'pages', 'config.md');
@@ -30,7 +66,7 @@ function getPathPrefixFromConfig() {
     // find the pathPrefix value
     const line = lines.slice(keyIndex + 1)?.find((line) => new RegExp(/\s*-/).test(line));
     if (!line) {
-        null;
+        return null;
     }
 
     // extract pathPrefix
@@ -125,4 +161,9 @@ export {
     removeFileExtension,
     replaceLinksInFile,
     replaceLinksInString,
+    log,
+    verbose,
+    logSection,
+    logStep,
+    VERBOSE,
 };

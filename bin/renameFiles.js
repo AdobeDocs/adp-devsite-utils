@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
-import path from 'path'
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,7 +20,14 @@ try {
         removeFileExtension,
         replaceLinksInFile,
         replaceLinksInString,
+        log,
+        verbose,
+        logSection,
+        logStep,
     } = await import('./scriptUtils.js');
+
+    logSection('RENAME FILES');
+    logStep('Starting file rename process');
 
     function toKebabCase(str) {
         const isScreamingSnakeCase = new RegExp(/^[A-Z0-9_]*$/).test(str);
@@ -66,13 +73,22 @@ try {
     }
 
     function getFileMap(files) {
+        verbose(`Processing ${files.length} files for renaming`);
         const map = new Map();
-        files.forEach((from) => {
+        let renamedCount = 0;
+
+        files.forEach((from, index) => {
             const to = toEdsPath(from);
             if (to !== from) {
                 map.set(from, to);
+                verbose(`  File ${index + 1}: "${from}" -> "${to}"`);
+                renamedCount++;
+            } else {
+                verbose(`  File ${index + 1}: "${from}" (no change needed)`);
             }
         });
+
+        verbose(`Total files to rename: ${renamedCount}`);
         return map;
     }
 
@@ -101,10 +117,14 @@ try {
     }
 
     function renameLinksInMarkdownFile(fileMap, file) {
+        verbose(`Processing markdown file: ${file}`);
         const dir = path.dirname(file);
+        const linkMap = getLinkMap(fileMap, dir);
+        verbose(`  Found ${linkMap.size} links to update in ${file}`);
+
         replaceLinksInFile({
             file,
-            linkMap: getLinkMap(fileMap, dir),
+            linkMap,
             getFindPattern: getFindPatternForMarkdownFiles,
             getReplacePattern: getReplacePatternForMarkdownFiles,
         });
@@ -215,48 +235,89 @@ try {
     }
 
     function renameFiles(map) {
+        verbose(`Starting file rename operation for ${map.size} files`);
+
         // create new dirs
+        logStep('Creating directories');
+        let dirsCreated = 0;
         map.forEach((to, _) => {
             const toDir = path.dirname(to);
             if (!fs.existsSync(toDir)) {
                 fs.mkdirSync(toDir, { recursive: true });
+                verbose(`  Created directory: ${toDir}`);
+                dirsCreated++;
             }
         });
+        verbose(`Created ${dirsCreated} directories`);
 
         // rename
+        logStep('Renaming files');
+        let filesRenamed = 0;
         map.forEach((to, from) => {
             fs.renameSync(from, to);
+            verbose(`  Renamed: "${from}" -> "${to}"`);
+            filesRenamed++;
         });
+        verbose(`Renamed ${filesRenamed} files`);
 
         // delete old dirs
+        logStep('Cleaning up empty directories');
+        let dirsRemoved = 0;
         map.forEach((_, from) => {
             const fromDir = path.dirname(from);
             if (fs.existsSync(fromDir)) {
+                const beforeCount = fs.readdirSync(fromDir).length;
                 deleteEmptyDirectoryUpwards(fromDir, __dirname);
+                const afterCount = fs.existsSync(fromDir) ? fs.readdirSync(fromDir).length : 0;
+                if (beforeCount !== afterCount) {
+                    verbose(`  Cleaned up directory: ${fromDir}`);
+                    dirsRemoved++;
+                }
             }
         });
+        verbose(`Cleaned up ${dirsRemoved} directories`);
     }
 
+    logStep('Getting deployable files');
     const files = getDeployableFiles();
+    verbose(`Found ${files.length} deployable files`);
+
+    logStep('Creating file map');
     const fileMap = getFileMap(files);
 
+    logStep('Processing markdown files');
     const mdFiles = getMarkdownFiles();
-    mdFiles.forEach((mdFile) => {
+    verbose(`Processing ${mdFiles.length} markdown files`);
+    mdFiles.forEach((mdFile, index) => {
+        verbose(`  Processing markdown file ${index + 1}/${mdFiles.length}: ${mdFile}`);
         renameLinksInMarkdownFile(fileMap, mdFile);
     });
 
+    logStep('Processing redirects file');
     const redirectsFile = getRedirectionsFilePath();
     const pathPrefix = await getPathPrefix();
+    verbose(`Path prefix: ${pathPrefix}`);
     if (fs.existsSync(redirectsFile)) {
+        verbose(`Redirects file found: ${redirectsFile}`);
         renameLinksInRedirectsFile(fileMap, pathPrefix);
+    } else {
+        verbose('No redirects file found, skipping');
     }
 
+    logStep('Processing gatsby config file');
     const gatsbyConfigFile = 'gatsby-config.js';
     if (fs.existsSync(gatsbyConfigFile)) {
+        verbose(`Gatsby config file found: ${gatsbyConfigFile}`);
         renameLinksInGatsbyConfigFile(fileMap, gatsbyConfigFile);
+    } else {
+        verbose('No gatsby config file found, skipping');
     }
 
+    logStep('Executing file renames');
     renameFiles(fileMap);
+
+    verbose('File rename process completed successfully');
 } catch (err) {
+    log(`File rename process failed: ${err.message}`, 'error');
     console.error(err);
 }
