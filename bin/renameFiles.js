@@ -306,7 +306,7 @@ try {
     }
 
     logStep('Processing gatsby config file');
-    const gatsbyConfigFile = 'gatsby-config.js';
+    const gatsbyConfigFile = path.join(__dirname, 'gatsby-config.js');
     if (fs.existsSync(gatsbyConfigFile)) {
         verbose(`Gatsby config file found: ${gatsbyConfigFile}`);
         renameLinksInGatsbyConfigFile(fileMap, gatsbyConfigFile);
