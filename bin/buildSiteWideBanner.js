@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
+import path from 'path'
 import { fileURLToPath } from 'url';
-import { path, dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 try {
   const currentDir = process.cwd();

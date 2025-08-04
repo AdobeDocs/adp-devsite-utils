@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
-import { path, dirname, join } from 'path';
-import { globSync } from 'glob';
+import path from 'path'
 import { fileURLToPath } from 'url';
+import { globSync } from 'glob';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 function getPathPrefixFromConfig() {
     const CONFIG_PATH = path.join('src', 'pages', 'config.md');
