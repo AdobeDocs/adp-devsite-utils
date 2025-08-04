@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
-import matchAll from 'string.prototype.matchall';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -34,7 +33,7 @@ try {
 
         const linkPattern = getFindPattern('[^)#]*');
         let data = fs.readFileSync(file, 'utf8');
-        const links = matchAll(data, new RegExp(linkPattern, 'gm'));
+        const links = data.matchAll(new RegExp(linkPattern, 'gm'));
         const linkArray = [...links];
         verbose(`  Found ${linkArray.length} links to process`);
 
