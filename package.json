@@ -9,12 +9,6 @@
   },
   "scripts": {
     "start": "node index.js",
-    "build-banner": "node index.js buildSiteWideBanner",
-    "build-nav": "node index.js buildNavigation",
-    "build-redirections": "node index.js buildRedirections",
-    "normalize-links": "node index.js normalizeLinks",
-    "rename-files": "node index.js renameFiles",
-    "check-links": "node index.js checkLinks",
     "list": "node index.js"
   },
   "author": "",
