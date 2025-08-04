@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-import path from 'path';
 import fs from 'node:fs';
-
 import { fileURLToPath } from 'url';
 import { path, dirname, join } from 'path';
 
