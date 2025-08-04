@@ -7,21 +7,20 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const {
+    getDeployableFiles,
+    getMarkdownFiles,
+    replaceLinksInFile,
+    getFindPatternForMarkdownFiles: getFindPattern,
+    getReplacePatternForMarkdownFiles: getReplacePattern,
+    removeFileExtension,
+    log,
+    verbose,
+    logSection,
+    logStep,
+} = await import('./scriptUtils.js');
 
 try {
-    const {
-        getDeployableFiles,
-        getMarkdownFiles,
-        replaceLinksInFile,
-        getFindPatternForMarkdownFiles: getFindPattern,
-        getReplacePatternForMarkdownFiles: getReplacePattern,
-        removeFileExtension,
-        log,
-        verbose,
-        logSection,
-        logStep,
-    } = await import('./scriptUtils.js');
-
     logSection('NORMALIZE LINKS');
     logStep('Starting link normalization process');
 

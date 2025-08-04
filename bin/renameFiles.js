@@ -6,25 +6,25 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const {
+    getPathPrefix,
+    readRedirectionsFile,
+    writeRedirectionsFile,
+    getRedirectionsFilePath,
+    getDeployableFiles,
+    getMarkdownFiles,
+    getFindPatternForMarkdownFiles,
+    getReplacePatternForMarkdownFiles,
+    removeFileExtension,
+    replaceLinksInFile,
+    replaceLinksInString,
+    log,
+    verbose,
+    logSection,
+    logStep,
+} = await import('./scriptUtils.js');
 
 try {
-    const {
-        getPathPrefix,
-        readRedirectionsFile,
-        writeRedirectionsFile,
-        getRedirectionsFilePath,
-        getDeployableFiles,
-        getMarkdownFiles,
-        getFindPatternForMarkdownFiles,
-        getReplacePatternForMarkdownFiles,
-        removeFileExtension,
-        replaceLinksInFile,
-        replaceLinksInString,
-        log,
-        verbose,
-        logSection,
-        logStep,
-    } = await import('./scriptUtils.js');
 
     logSection('RENAME FILES');
     logStep('Starting file rename process');

@@ -6,10 +6,9 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 
 try {
-    const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
-
     logSection('BUILD NAVIGATION');
     logStep('Starting navigation build process');
 

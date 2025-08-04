@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 
 function getMarkdownFiles(dir, results = []) {
   if (!fs.existsSync(dir)) {
@@ -86,8 +87,6 @@ function getHeadings(content) {
 }
 
 async function checkLinks() {
-  const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
-
   logSection('CHECK LINKS');
   logStep('Starting link checking process');
 

@@ -6,10 +6,9 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 
 try {
-  const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
-
   logSection('BUILD SITE WIDE BANNER');
   logStep('Starting site-wide banner build process');
 
