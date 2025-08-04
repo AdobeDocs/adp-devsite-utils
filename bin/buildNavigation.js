@@ -132,7 +132,7 @@ function buildSideNavRecursively(sideNav, depth, verbose) {
 
     for (var k in sideNav) {
         let header = sideNav[k].header ? 'header' : ''; 
-        sideNavMarkdown += `${insertSpace(depth)}- [${sideNav[k].title}](${sideNav[k].path}) ${header}\n`;
+        sideNavMarkdown += `${insertSpace(depth)}- [${sideNav[k].title}](${sideNav[k].path})${header}\n`;
         verbose(`    Side nav item: ${sideNav[k].title} (depth ${depth})${header ? ' [HEADER]' : ''}`);
 
         if (sideNav[k].pages) {
