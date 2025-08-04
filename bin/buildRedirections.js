@@ -17,7 +17,9 @@ try {
     const filePath = path.join(currentDir, 'gatsby-config.js');
     verbose(`Loading gatsby-config.js from: ${filePath}`);
 
-    const { pathPrefix } = await import(filePath);
+    const config = await import(filePath);
+    const pathPrefix = config.default?.pathPrefix;
+
     verbose(`Loaded pathPrefix: ${pathPrefix}`);
 
     const { globSync } = await import('glob');

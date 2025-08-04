@@ -18,7 +18,15 @@ try {
   const filePath = path.join(currentDir, 'gatsby-config.js');
   verbose(`Loading gatsby-config.js from: ${filePath}`);
 
-  const { siteMetadata } = await import(filePath);
+  const config = await import(filePath);
+
+  const siteMetadata = config.default?.siteMetadata;
+
+  if (!siteMetadata) {
+    verbose('siteMetadata not found in gatsby-config.js', 'error');
+    throw new TypeError("siteMetadata not found");
+  }
+
   verbose(`Loaded siteMetadata with ${Object.keys(siteMetadata).length} properties`);
 
   let sideWideBanner = ``;

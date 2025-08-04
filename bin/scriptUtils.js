@@ -78,8 +78,13 @@ function getPathPrefixFromConfig() {
 }
 
 async function getPathPrefixFromGatsbyConfig() {
-    const { pathPrefix } = await import('./gatsby-config.js');
-    return pathPrefix;
+    try {
+        const config = await import('./gatsby-config.js');
+        return config.default?.pathPrefix;
+    } catch (error) {
+        verbose(`Failed to load gatsby-config.js: ${error.message}`, 'warn');
+        return null;
+    }
 }
 
 async function getPathPrefix() {
