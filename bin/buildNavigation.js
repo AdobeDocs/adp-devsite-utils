@@ -22,6 +22,7 @@ try {
     verbose(`Loading gatsby-config.js from: ${filePath}`);
 
     const { siteMetadata, pathPrefix } = await import(filePath);
+    console.log(siteMetadata)
     verbose(`Loaded siteMetadata with ${Object.keys(siteMetadata).length} properties`);
 
     if (!pathPrefix) {
