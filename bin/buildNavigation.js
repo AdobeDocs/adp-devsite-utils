@@ -115,7 +115,7 @@ try {
         verbose('No subPages configuration found');
     }
 
-    let configFilePath = path.resolve(__dirname + '/src/pages/config.md');
+    let configFilePath = path.resolve(currentDir + '/src/pages/config.md');
     verbose(`Writing navigation config to: ${configFilePath}`);
     fs.writeFileSync(configFilePath, topNavMarkdown);
     verbose(`Navigation config written successfully (${topNavMarkdown.length} characters)`);
