@@ -26,21 +26,31 @@ function getMarkdownFiles(dir, results = []) {
 
 async function checkExternalLink(url) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     const response = await fetch(url, {
       method: 'HEAD',
-      timeout: 30000, // 30 second timeout
+      signal: controller.signal,
       redirect: 'follow'
     });
+    
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
-    // If it's a timeout error, try one more time with GET method
-    if (error.message.includes('timeout')) {
+    if (error.name === 'AbortError') {
+      // Timeout occurred, try with GET method
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
         const response = await fetch(url, {
           method: 'GET',
-          timeout: 30000,
+          signal: controller.signal,
           redirect: 'follow'
         });
+        
+        clearTimeout(timeoutId);
         return response.ok;
       } catch (retryError) {
         return false;
@@ -133,23 +143,26 @@ async function checkLinks() {
   }
 
   // Second pass: check external links concurrently
-  console.log(`\nChecking links...`);
-  const externalResults = await Promise.all(
-    Array.from(externalLinksToCheck.entries()).map(async ([url, file]) => {
-      const isValid = await checkExternalLink(url);
-      if (!isValid) {
-        return {
-          url,
-          type: 'external',
-          error: 'Link appears to be dead',
-          file
-        };
-      }
-      return null;
-    })
-  );
+  if (externalLinksToCheck.size > 0) {
+    console.log(`\nChecking ${externalLinksToCheck.size} external links...`);
+    
+    const externalResults = await Promise.all(
+      Array.from(externalLinksToCheck.entries()).map(async ([url, file]) => {
+        const isValid = await checkExternalLink(url);
+        if (!isValid) {
+          return {
+            url,
+            type: 'external',
+            error: 'Link appears to be dead',
+            file
+          };
+        }
+        return null;
+      })
+    );
 
-  brokenLinks = [...brokenLinks, ...externalResults.filter(result => result !== null)];
+    brokenLinks = [...brokenLinks, ...externalResults.filter(result => result !== null)];
+  }
 
   // Report results
   if (brokenLinks.length > 0) {
