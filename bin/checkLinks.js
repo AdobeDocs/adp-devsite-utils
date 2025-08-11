@@ -43,7 +43,9 @@ async function checkExternalLink(url) {
     });
     // Consider both OK responses and redirects (status 200-399) as valid
     const isValid = response.ok;
-    verbose(`  Result: ${isValid ? 'VALID' : 'INVALID'} (status: ${response.status})`);
+    if (!isValid){
+      verbose(`  Result: ${isValid ? 'VALID' : 'INVALID'} (status: ${response.status})`);
+    }
     return isValid;
   } catch (error) {
     verbose(`  Error: ${error.message}`);
