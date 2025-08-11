@@ -78,11 +78,23 @@ function getHeadings(content) {
   let match;
 
   while ((match = headingRegex.exec(content)) !== null) {
-    const headingId = match[1]
+    const headingText = match[1];
+    // Generate heading ID similar to how GitHub and most markdown processors do it
+    const headingId = headingText
       .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-');
-    headings.add(headingId);
+      .trim()
+      // Replace spaces and underscores with hyphens
+      .replace(/[\s_]+/g, '-')
+      // Remove special characters but keep alphanumeric and hyphens
+      .replace(/[^\w\-]/g, '')
+      // Remove multiple consecutive hyphens
+      .replace(/-+/g, '-')
+      // Remove leading and trailing hyphens
+      .replace(/^-+|-+$/g, '');
+    
+    if (headingId) {
+      headings.add(headingId);
+    }
   }
 
   return headings;
@@ -103,6 +115,21 @@ function getCachedHeadings(filePath) {
     headingCache.set(filePath, getHeadings(content));
   }
   return headingCache.get(filePath);
+}
+
+// Normalize anchor text to match heading ID format
+function normalizeAnchor(anchor) {
+  return anchor
+    .toLowerCase()
+    .trim()
+    // Replace spaces and underscores with hyphens
+    .replace(/[\s_]+/g, '-')
+    // Remove special characters but keep alphanumeric and hyphens
+    .replace(/[^\w\-]/g, '')
+    // Remove multiple consecutive hyphens
+    .replace(/-+/g, '-')
+    // Remove leading and trailing hyphens
+    .replace(/^-+|-+$/g, '');
 }
 
 async function checkLinks() {
@@ -133,7 +160,14 @@ async function checkLinks() {
         // Handle pure anchor links (links to sections in the same file)
         if (!filePath && anchor) {
           const headings = getCachedHeadings(file);
-          if (!headings.has(anchor)) {
+          const normalizedAnchor = normalizeAnchor(anchor);
+          if (!headings.has(normalizedAnchor)) {
+            // Debug: show what headings were found vs what we're looking for
+            console.log(`\n🔍 Anchor link debug for ${file}:`);
+            console.log(`  Original anchor: "${anchor}"`);
+            console.log(`  Normalized anchor: "${normalizedAnchor}"`);
+            console.log(`  Available headings: ${Array.from(headings).slice(0, 10).join(', ')}${headings.size > 10 ? '...' : ''}`);
+            
             fileBrokenLinks.push({
               file,
               url,
@@ -159,7 +193,16 @@ async function checkLinks() {
         } else if (anchor) {
           // If file exists and there's an anchor, check if the heading exists
           const headings = getCachedHeadings(localPath);
-          if (!headings.has(anchor)) {
+          const normalizedAnchor = normalizeAnchor(anchor);
+          if (!headings.has(normalizedAnchor)) {
+            // Debug: show what headings were found vs what we're looking for
+            console.log(`\n🔍 Cross-file anchor link debug:`);
+            console.log(`  File: ${file}`);
+            console.log(`  Target file: ${localPath}`);
+            console.log(`  Original anchor: "${anchor}"`);
+            console.log(`  Normalized anchor: "${normalizedAnchor}"`);
+            console.log(`  Available headings: ${Array.from(headings).slice(0, 10).join(', ')}${headings.size > 10 ? '...' : ''}`);
+            
             fileBrokenLinks.push({
               file,
               url,
