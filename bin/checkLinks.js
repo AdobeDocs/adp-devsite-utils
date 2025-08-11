@@ -8,9 +8,7 @@ import { fileURLToPath } from 'url';
 const __dirname = process.cwd();
 
 function getMarkdownFiles(dir, results = []) {
-  if (!fs.existsSync(dir)) {
-    return results;
-  }
+  if (!fs.existsSync(dir)) return results;
 
   const entries = fs.readdirSync(dir, { withFileTypes: true });
 
@@ -28,31 +26,21 @@ function getMarkdownFiles(dir, results = []) {
 
 async function checkExternalLink(url) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
     const response = await fetch(url, {
       method: 'HEAD',
-      signal: controller.signal,
+      timeout: 30000, // 30 second timeout
       redirect: 'follow'
     });
-    
-    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
-    if (error.name === 'AbortError') {
-      // Timeout occurred, try with GET method
+    // If it's a timeout error, try one more time with GET method
+    if (error.message.includes('timeout')) {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
         const response = await fetch(url, {
           method: 'GET',
-          signal: controller.signal,
+          timeout: 30000,
           redirect: 'follow'
         });
-        
-        clearTimeout(timeoutId);
         return response.ok;
       } catch (retryError) {
         return false;
@@ -84,7 +72,7 @@ async function checkLinks() {
   let brokenLinks = [];
   let externalLinksToCheck = new Map();
 
-  // First pass: collect and check local links
+  // First pass: collect all links and check local ones
   for (const file of markdownFiles) {
     const content = fs.readFileSync(file, 'utf8');
     let match;
@@ -92,15 +80,16 @@ async function checkLinks() {
     while ((match = linkRegex.exec(content)) !== null) {
       const url = match[1];
 
-      if (!url) {
-        continue;
-      }
+      // Skip empty links
+      if (!url) continue;
 
       if (url.startsWith('http') || url.startsWith('https')) {
         externalLinksToCheck.set(url, file);
       } else if (!url.startsWith('mailto:')) {
+        // Handle anchor links in local files
         const [filePath, anchor] = url.split('#');
 
+        // Handle pure anchor links (links to sections in the same file)
         if (!filePath && anchor) {
           const headings = getHeadings(content);
           if (!headings.has(anchor)) {
@@ -114,6 +103,7 @@ async function checkLinks() {
           continue;
         }
 
+        // Check local files and their anchors
         const localPath = filePath.startsWith('/') ?
           path.join('.', filePath.slice(1)) :
           path.join(path.dirname(file), filePath);
@@ -126,6 +116,7 @@ async function checkLinks() {
             error: 'File not found'
           });
         } else if (anchor) {
+          // If file exists and there's an anchor, check if the heading exists
           const targetContent = fs.readFileSync(localPath, 'utf8');
           const headings = getHeadings(targetContent);
           if (!headings.has(anchor)) {
@@ -141,31 +132,24 @@ async function checkLinks() {
     }
   }
 
-  // Second pass: check external links with progress
-  if (externalLinksToCheck.size > 0) {
-    console.log(`Checking ${externalLinksToCheck.size} external links...`);
-    
-    const externalResults = await Promise.allSettled(
-      Array.from(externalLinksToCheck.entries()).map(async ([url, file]) => {
-        const isValid = await checkExternalLink(url);
-        if (!isValid) {
-          return {
-            url,
-            type: 'external',
-            error: 'Link appears to be dead',
-            file
-          };
-        }
-        return null;
-      })
-    );
+  // Second pass: check external links concurrently
+  console.log(`\nChecking links...`);
+  const externalResults = await Promise.all(
+    Array.from(externalLinksToCheck.entries()).map(async ([url, file]) => {
+      const isValid = await checkExternalLink(url);
+      if (!isValid) {
+        return {
+          url,
+          type: 'external',
+          error: 'Link appears to be dead',
+          file
+        };
+      }
+      return null;
+    })
+  );
 
-    const brokenExternalLinks = externalResults
-      .filter(result => result.status === 'fulfilled' && result.value !== null)
-      .map(result => result.value);
-      
-    brokenLinks = [...brokenLinks, ...brokenExternalLinks];
-  }
+  brokenLinks = [...brokenLinks, ...externalResults.filter(result => result !== null)];
 
   // Report results
   if (brokenLinks.length > 0) {
