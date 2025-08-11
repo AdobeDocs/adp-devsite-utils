@@ -5,8 +5,6 @@ import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
-
 const __dirname = process.cwd();
 
 function getMarkdownFiles(dir, results = []) {
@@ -30,20 +28,31 @@ function getMarkdownFiles(dir, results = []) {
 
 async function checkExternalLink(url) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(url, {
       method: 'HEAD',
-      timeout: 30000,
+      signal: controller.signal,
       redirect: 'follow'
     });
+    
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
-    if (error.message.includes('timeout')) {
+    if (error.name === 'AbortError') {
+      // Timeout occurred, try with GET method
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const response = await fetch(url, {
           method: 'GET',
-          timeout: 30000,
+          signal: controller.signal,
           redirect: 'follow'
         });
+        
+        clearTimeout(timeoutId);
         return response.ok;
       } catch (retryError) {
         return false;
@@ -132,24 +141,31 @@ async function checkLinks() {
     }
   }
 
-  // Second pass: check external links
-  const externalResults = await Promise.all(
-    Array.from(externalLinksToCheck.entries()).map(async ([url, file]) => {
-      const isValid = await checkExternalLink(url);
-      if (!isValid) {
-        return {
-          url,
-          type: 'external',
-          error: 'Link appears to be dead',
-          file
-        };
-      }
-      return null;
-    })
-  );
+  // Second pass: check external links with progress
+  if (externalLinksToCheck.size > 0) {
+    console.log(`Checking ${externalLinksToCheck.size} external links...`);
+    
+    const externalResults = await Promise.allSettled(
+      Array.from(externalLinksToCheck.entries()).map(async ([url, file]) => {
+        const isValid = await checkExternalLink(url);
+        if (!isValid) {
+          return {
+            url,
+            type: 'external',
+            error: 'Link appears to be dead',
+            file
+          };
+        }
+        return null;
+      })
+    );
 
-  const brokenExternalLinks = externalResults.filter(result => result !== null);
-  brokenLinks = [...brokenLinks, ...brokenExternalLinks];
+    const brokenExternalLinks = externalResults
+      .filter(result => result.status === 'fulfilled' && result.value !== null)
+      .map(result => result.value);
+      
+    brokenLinks = [...brokenLinks, ...brokenExternalLinks];
+  }
 
   // Report results
   if (brokenLinks.length > 0) {
