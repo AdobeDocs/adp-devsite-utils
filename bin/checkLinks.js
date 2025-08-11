@@ -28,13 +28,13 @@ async function checkExternalLink(url) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
+
     const response = await fetch(url, {
       method: 'HEAD',
       signal: controller.signal,
       redirect: 'follow'
     });
-    
+
     clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
@@ -43,13 +43,13 @@ async function checkExternalLink(url) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
-        
+
         const response = await fetch(url, {
           method: 'GET',
           signal: controller.signal,
           redirect: 'follow'
         });
-        
+
         clearTimeout(timeoutId);
         return response.ok;
       } catch (retryError) {
@@ -144,8 +144,6 @@ async function checkLinks() {
 
   // Second pass: check external links concurrently
   if (externalLinksToCheck.size > 0) {
-    console.log(`\nChecking ${externalLinksToCheck.size} external links...`);
-    
     const externalResults = await Promise.all(
       Array.from(externalLinksToCheck.entries()).map(async ([url, file]) => {
         const isValid = await checkExternalLink(url);
