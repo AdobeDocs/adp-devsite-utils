@@ -91,7 +91,7 @@ function getHeadings(content) {
       .replace(/-+/g, '-')
       // Remove leading and trailing hyphens
       .replace(/^-+|-+$/g, '');
-    
+
     if (headingId) {
       headings.add(headingId);
     }
@@ -162,12 +162,6 @@ async function checkLinks() {
           const headings = getCachedHeadings(file);
           const normalizedAnchor = normalizeAnchor(anchor);
           if (!headings.has(normalizedAnchor)) {
-            // Debug: show what headings were found vs what we're looking for
-            console.log(`\n🔍 Anchor link debug for ${file}:`);
-            console.log(`  Original anchor: "${anchor}"`);
-            console.log(`  Normalized anchor: "${normalizedAnchor}"`);
-            console.log(`  Available headings: ${Array.from(headings).slice(0, 10).join(', ')}${headings.size > 10 ? '...' : ''}`);
-            
             fileBrokenLinks.push({
               file,
               url,
@@ -195,14 +189,6 @@ async function checkLinks() {
           const headings = getCachedHeadings(localPath);
           const normalizedAnchor = normalizeAnchor(anchor);
           if (!headings.has(normalizedAnchor)) {
-            // Debug: show what headings were found vs what we're looking for
-            console.log(`\n🔍 Cross-file anchor link debug:`);
-            console.log(`  File: ${file}`);
-            console.log(`  Target file: ${localPath}`);
-            console.log(`  Original anchor: "${anchor}"`);
-            console.log(`  Normalized anchor: "${normalizedAnchor}"`);
-            console.log(`  Available headings: ${Array.from(headings).slice(0, 10).join(', ')}${headings.size > 10 ? '...' : ''}`);
-            
             fileBrokenLinks.push({
               file,
               url,
@@ -219,7 +205,7 @@ async function checkLinks() {
 
   // Wait for all file processing to complete
   const fileResults = await Promise.all(filePromises);
-  
+
   // Collect all results
   for (const { fileBrokenLinks, fileExternalLinks } of fileResults) {
     brokenLinks.push(...fileBrokenLinks);
@@ -230,8 +216,8 @@ async function checkLinks() {
 
   // Second pass: check external links with improved concurrency
   if (externalLinksToCheck.size > 0) {
-    console.log(`\nChecking ${externalLinksToCheck.size} external links...`);
-    
+    console.log(`\nChecking links...`);
+
     // Process external links in batches to avoid overwhelming servers
     const batchSize = 10;
     const externalLinksArray = Array.from(externalLinksToCheck.entries());
