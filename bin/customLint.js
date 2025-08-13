@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from 'node:fs';
+import path from 'path';
 
 // Get all markdown files
 function getMarkdownFiles(dir) {
@@ -177,33 +177,33 @@ function checkCustomComponentSelfClosing(filePath) {
     for (const component of customComponents) {
       const openingTagRegex = new RegExp(`<${component}(?:\\s+[^>]*)?>`, 'gi');
       const closingTagRegex = new RegExp(`</${component}>`, 'gi');
-      
+
       // Check if this line contains an opening tag
       if (openingTagRegex.test(trimmedLine)) {
         // Look ahead to see if there's a corresponding closing tag
         let hasClosingTag = false;
         let inComponent = false;
-        
+
         for (let lookAheadLine = lineNumber; lookAheadLine <= lines.length; lookAheadLine++) {
           const lookAheadContent = lines[lookAheadLine - 1];
-          
+
           // Check if we're entering/exiting code blocks
           if (lookAheadContent.trim().startsWith('```')) {
             continue;
           }
-          
+
           // Check for closing tag
           if (closingTagRegex.test(lookAheadContent)) {
             hasClosingTag = true;
             break;
           }
-          
+
           // Check for another opening tag of the same component (nested)
           if (openingTagRegex.test(lookAheadContent) && lookAheadLine !== lineNumber) {
             break;
           }
         }
-        
+
         if (hasClosingTag) {
           errors.push(`Line ${lineNumber}: custom-component-self-closing - Custom component "${component}" should be self-closing (use <${component} /> instead of <${component}>...</${component}>).`);
         }
@@ -284,18 +284,18 @@ function checkMediaAltText(filePath) {
 function checkFilenameCharacters(filePath) {
   const filename = path.basename(filePath);
   const errors = [];
-  
+
   // Check for underscores
   if (filename.includes('_')) {
     errors.push(`custom-filename-characters - Filename "${filename}" contains underscore (_). Use hyphens (-) instead.`);
   }
-  
+
   // Check for dots (except the .md extension)
   const nameWithoutExtension = filename.replace(/\.md$/, '');
   if (nameWithoutExtension.includes('.')) {
     errors.push(`custom-filename-characters - Filename "${filename}" contains dots (.) in the name. Use hyphens (-) instead.`);
   }
-  
+
   return { warnings: [], errors };
 }
 
@@ -369,7 +369,7 @@ function checkTableContent(filePath) {
         tableLines = [];
         continue;
       }
-      
+
       // If this line starts with |, it's a valid table row
       if (trimmedLine.startsWith('|')) {
         tableLines.push({ lineNumber, content: trimmedLine });
@@ -392,7 +392,7 @@ function analyzeTableStructure(tableLines, errors) {
 
   for (let i = 0; i < tableLines.length; i++) {
     const { lineNumber, content } = tableLines[i];
-    
+
     // Skip separator rows
     if (/^[\s|\-:]+$/.test(content)) {
       continue;
@@ -412,14 +412,14 @@ function analyzeTableStructure(tableLines, errors) {
 
     // Check for actual JSON-like content (curly braces, quotes, colons) - but be more specific
     // Only flag if it looks like actual JSON/object syntax, not descriptive text
-    if ((content.includes('{') && content.includes('}')) || 
+    if ((content.includes('{') && content.includes('}')) ||
         (content.includes('"') && (content.includes('{') || content.includes('}')))) {
       errors.push(`Line ${lineNumber}: custom-table-content - Code-like content (JSON, objects) cannot be contained within tables. Move this content outside the table.`);
       return;
     }
 
     // Check for multi-line content indicators
-    if (content.includes('Model:') || content.includes('NamespaceDTO') || 
+    if (content.includes('Model:') || content.includes('NamespaceDTO') ||
         content.includes('description:')) {
       errors.push(`Line ${lineNumber}: custom-table-content - Multi-line content indicators cannot be contained within tables. Move this content outside the table.`);
       return;
@@ -508,14 +508,14 @@ function checkFrontmatterMetadata(filePath) {
   if (filePath.includes('config.md')) {
     return { warnings: [], errors: [] };
   }
-  
+
   const content = fs.readFileSync(filePath, 'utf8');
   const lines = content.split('\n');
   let warnings = [];
-  
+
   // Check if file starts with frontmatter
   const hasFrontmatterStart = lines.length > 0 && lines[0].trim().startsWith('---');
-  
+
   if (!hasFrontmatterStart) {
     // If no frontmatter at all, just report that one issue
     warnings.push(`Line 1: custom-frontmatter - File must start with frontmatter (---)`);
@@ -630,7 +630,7 @@ function runCustomLint() {
 
   for (const file of markdownFiles) {
     const relativePath = file.replace('./src/pages/', '');
-    
+
     // Run all checks
     const h1Result = checkMultipleH1(file);
     const linkResult = checkAngleBracketLinks(file);
@@ -673,12 +673,12 @@ function runCustomLint() {
     // Display results for this file
     if (fileWarnings.length > 0 || fileErrors.length > 0) {
       console.log(`\n${relativePath}:`);
-      
+
       // Display warnings
       for (const warning of fileWarnings) {
         console.log(`  ⚠️  WARNING: ${warning}`);
       }
-      
+
       // Display errors
       for (const error of fileErrors) {
         console.log(`  ❌ ERROR: ${error}`);
@@ -697,11 +697,11 @@ function runCustomLint() {
     console.log(`\n📊 Summary:`);
     console.log(`  Warnings: ${allWarnings.length}`);
     console.log(`  Errors: ${allErrors.length}`);
-    
+
     if (allWarnings.length > 0) {
       console.log(`\n⚠️  Total Warnings: ${allWarnings.length}`);
     }
-    
+
     if (allErrors.length > 0) {
       console.log(`\n❌ Total Errors: ${allErrors.length}`);
     }
