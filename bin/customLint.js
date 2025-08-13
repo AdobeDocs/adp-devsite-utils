@@ -718,4 +718,7 @@ function runCustomLint() {
   }
 }
 
-runCustomLint();
+runCustomLint().catch(error => {
+  console.error('Error while doing lint checks:', error);
+  process.exit(1);
+});
