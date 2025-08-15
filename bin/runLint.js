@@ -31,12 +31,12 @@ async function runLint() {
             process.exit(1);
         }
 
-        logStep('Running remark with adp-devsite-utils configuration');
+        logStep('Running remark with minimal configuration to isolate git issue');
         console.log('\nRunning remark linting...');
 
         try {
-            // Run remark directly with the adp-devsite-utils config
-            const result = await runRemarkWithConfig();
+            // First, try with just basic remark to see if the issue is with our custom plugins
+            const result = await runRemarkWithMinimalConfig();
 
             if (result.success) {
                 log('✅ All markdown files passed linting!', 'success');
@@ -58,39 +58,23 @@ async function runLint() {
     }
 }
 
-async function runRemarkWithConfig() {
+async function runRemarkWithMinimalConfig() {
     return new Promise((resolve, reject) => {
         // Set a reasonable timeout (5 minutes)
         const timeout = 300000; // 5 minutes
 
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
 
-        // Get the absolute path to the .remarkrc.yaml in adp-devsite-utils repo
-        const configPath = path.resolve(scriptDir, '..', '.remarkrc.yaml');
-
-        if (!fs.existsSync(configPath)) {
-            reject(new Error(`Could not find .remarkrc.yaml at ${configPath}`));
-            return;
-        }
-
-        console.log(`Using config file: ${configPath}`);
-
-        // Run remark from the adp-devsite-utils directory to maintain git context
-        // but lint the target repo's src/pages directory
-        const adpDevsiteUtilsDir = path.dirname(configPath);
-        const targetSrcPages = path.join(targetDir, 'src', 'pages');
-
-        console.log(`Running from: ${adpDevsiteUtilsDir}`);
-        console.log(`Linting directory: ${targetSrcPages}`);
+        // Try with just basic remark first, no custom config
+        console.log('Testing with basic remark configuration...');
 
         const remarkProcess = spawn('npx', [
             'remark',
-            targetSrcPages,
+            'src/pages',
             '--quiet',
-            '--frail',
-            '--config', configPath
+            '--frail'
         ], {
-            cwd: adpDevsiteUtilsDir, // Run from adp-devsite-utils repo
+            cwd: targetDir, // Run in target repo
             stdio: 'pipe'
         });
 
@@ -115,11 +99,13 @@ async function runRemarkWithConfig() {
             clearTimeout(timeoutId);
 
             if (code === 0) {
-                resolve({ success: true, stdout, stderr });
+                console.log('✅ Basic remark worked! Now trying with full config...');
+                // If basic remark worked, try with full config
+                runRemarkWithFullConfig().then(resolve).catch(reject);
             } else {
-                // Re-run without --quiet to show the actual issues
-                console.log('\nShowing detailed linting issues...');
-                showDetailedIssues(configPath, adpDevsiteUtilsDir, targetSrcPages);
+                console.log('❌ Basic remark failed. This suggests the issue is with remark itself, not our config.');
+                console.log('stdout:', stdout);
+                console.log('stderr:', stderr);
                 resolve({ success: false, stdout, stderr });
             }
         });
@@ -131,15 +117,66 @@ async function runRemarkWithConfig() {
     });
 }
 
-async function showDetailedIssues(configPath, adpDevsiteUtilsDir, targetSrcPages) {
-    return new Promise((resolve) => {
+async function runRemarkWithFullConfig() {
+    return new Promise((resolve, reject) => {
+        // Get the absolute path to the .remarkrc.yaml in adp-devsite-utils repo
+        const configPath = path.resolve(scriptDir, '..', '.remarkrc.yaml');
+
+        if (!fs.existsSync(configPath)) {
+            reject(new Error(`Could not find .remarkrc.yaml at ${configPath}`));
+            return;
+        }
+
+        console.log(`Using config file: ${configPath}`);
+
         const remarkProcess = spawn('npx', [
             'remark',
-            targetSrcPages,
+            'src/pages',
+            '--quiet',
             '--frail',
             '--config', configPath
         ], {
-            cwd: adpDevsiteUtilsDir, // Run from adp-devsite-utils repo
+            cwd: targetDir, // Run in target repo
+            stdio: 'pipe'
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        remarkProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        remarkProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        remarkProcess.on('close', (code) => {
+            if (code === 0) {
+                resolve({ success: true, stdout, stderr });
+            } else {
+                // Re-run without --quiet to show the actual issues
+                console.log('\nShowing detailed linting issues...');
+                showDetailedIssues(configPath);
+                resolve({ success: false, stdout, stderr });
+            }
+        });
+
+        remarkProcess.on('error', (error) => {
+            reject(new Error(`Failed to start remark: ${error.message}`));
+        });
+    });
+}
+
+async function showDetailedIssues(configPath) {
+    return new Promise((resolve) => {
+        const remarkProcess = spawn('npx', [
+            'remark',
+            'src/pages',
+            '--frail',
+            '--config', configPath
+        ], {
+            cwd: targetDir,
             stdio: 'inherit'
         });
 
