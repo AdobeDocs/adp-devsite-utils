@@ -72,6 +72,11 @@ async function runRemarkWithConfig() {
             verbose(`Using temporary config file: ${tempConfigPath}`);
             console.log(`Using temporary config file: ${tempConfigPath}`);
 
+            // Verify the temp file exists
+            if (!fs.existsSync(tempConfigPath)) {
+                throw new Error(`Failed to create temporary config file at ${tempConfigPath}`);
+            }
+
             // Run remark with the temporary config
             const remarkProcess = spawn('npx', [
                 'remark',
@@ -133,25 +138,49 @@ async function runRemarkWithConfig() {
 }
 
 function createTempConfig() {
-    // Read the original config
-    const originalConfigPath = path.join(scriptDir, '..', '.remarkrc.yaml');
-    const configContent = fs.readFileSync(originalConfigPath, 'utf8');
+    try {
+        // Read the original config
+        const originalConfigPath = path.join(scriptDir, '..', '.remarkrc.yaml');
+        console.log(`Reading config from: ${originalConfigPath}`);
 
-    // Replace relative paths with absolute paths
-    const adpDevsiteUtilsRoot = path.dirname(originalConfigPath);
-    let updatedConfig = configContent;
+        if (!fs.existsSync(originalConfigPath)) {
+            throw new Error(`Original config not found at ${originalConfigPath}`);
+        }
 
-    // Replace /linter/ paths with absolute paths
-    updatedConfig = updatedConfig.replace(
-      /\/linter\//g,
-      path.join(adpDevsiteUtilsRoot, 'linter', path.sep)
-    );
+        const configContent = fs.readFileSync(originalConfigPath, 'utf8');
+        console.log(`Original config content:\n${configContent}`);
 
-    // Create temporary config file in target repo
-    const tempConfigPath = path.join(targetDir, '.remarkrc.temp.yaml');
-    fs.writeFileSync(tempConfigPath, updatedConfig);
+        // Replace relative paths with absolute paths
+        const adpDevsiteUtilsRoot = path.dirname(originalConfigPath);
+        console.log(`ADP devsite utils root: ${adpDevsiteUtilsRoot}`);
 
-    return tempConfigPath;
+        let updatedConfig = configContent;
+
+        // Replace /linter/ paths with absolute paths
+        updatedConfig = updatedConfig.replace(
+          /\/linter\//g,
+          path.join(adpDevsiteUtilsRoot, 'linter', path.sep)
+        );
+
+        console.log(`Updated config content:\n${updatedConfig}`);
+
+        // Create temporary config file in target repo
+        const tempConfigPath = path.join(targetDir, '.remarkrc.temp.yaml');
+        fs.writeFileSync(tempConfigPath, updatedConfig);
+
+        console.log(`Created temp config at: ${tempConfigPath}`);
+
+        // Verify the file was created
+        if (!fs.existsSync(tempConfigPath)) {
+            throw new Error(`Failed to create temp config file at ${tempConfigPath}`);
+        }
+
+        return tempConfigPath;
+
+    } catch (error) {
+        console.error('Error in createTempConfig:', error);
+        throw error;
+    }
 }
 
 async function showDetailedIssues(configPath) {
