@@ -15,6 +15,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "glob": "^11.0.3",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "remark": "^15.0.1",
+    "remark-cli": "^12.0.1"
   }
 }
