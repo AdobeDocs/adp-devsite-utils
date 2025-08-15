@@ -4,7 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-const TARGET_DIR = process.cwd();
+const ROOT_DIR = process.cwd();
+const REMARK_CONFIG_DIR = path.join(ROOT_DIR, '.github/linters');
 const REMARK_CONFIG_FILE = 'remarkrc.yml';
 const REQUIRED_DEPS = [
   'remark@^15.0.1',
@@ -33,7 +34,7 @@ async function lintRemark() {
 }
 
 async function ensureRemarkConfig() {
-  const configPath = path.join(TARGET_DIR, REMARK_CONFIG_FILE);
+  const configPath = path.join(REMARK_CONFIG_DIR, REMARK_CONFIG_FILE);
   
   if (!fs.existsSync(configPath)) {
     console.log(`Creating ${REMARK_CONFIG_FILE}...`);
@@ -47,7 +48,7 @@ async function ensureRemarkConfig() {
 }
 
 async function ensureDependencies() {
-  const packageJsonPath = path.join(TARGET_DIR, 'package.json');
+  const packageJsonPath = path.join(ROOT_DIR, 'package.json');
   
   if (!fs.existsSync(packageJsonPath)) {
     throw new Error('package.json not found in target directory');
@@ -66,10 +67,10 @@ async function ensureDependencies() {
     
     try {
       // Try yarn first, fallback to npm
-      execSync(`yarn add -D ${missingDeps.join(' ')}`, { stdio: 'inherit', cwd: TARGET_DIR });
+      execSync(`yarn add -D ${missingDeps.join(' ')}`, { stdio: 'inherit', cwd: ROOT_DIR });
     } catch (yarnError) {
       try {
-        execSync(`npm install --save-dev ${missingDeps.join(' ')}`, { stdio: 'inherit', cwd: TARGET_DIR });
+        execSync(`npm install --save-dev ${missingDeps.join(' ')}`, { stdio: 'inherit', cwd: ROOT_DIR });
       } catch (npmError) {
         throw new Error('Failed to install dependencies with both yarn and npm');
       }
@@ -81,10 +82,10 @@ async function runLint() {
   console.log('Running lint...');
   
   try {
-    // Try npx first (works with both yarn and npm)
+    // Try npx (works with both yarn and npm)
     execSync(`npx remark src/pages --quiet --rc-path ${REMARK_CONFIG_FILE}`, { 
       stdio: 'inherit',
-      cwd: TARGET_DIR 
+      cwd: ROOT_DIR 
     });
   } catch (error) {
     // Exit with the same code as the lint command
