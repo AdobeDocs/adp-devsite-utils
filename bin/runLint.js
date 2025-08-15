@@ -77,7 +77,7 @@ async function runRemarkWithConfig() {
                 throw new Error(`Failed to create temporary config file at ${tempConfigPath}`);
             }
 
-            // Run remark with the temporary config
+            // Run remark with the temporary config using absolute path
             const remarkProcess = spawn('npx', [
                 'remark',
                 'src/pages',
@@ -164,8 +164,8 @@ function createTempConfig() {
 
         console.log(`Updated config content:\n${updatedConfig}`);
 
-        // Create temporary config file in target repo
-        const tempConfigPath = path.join(targetDir, '.remarkrc.temp.yaml');
+        // Create temporary config file in target repo with absolute path
+        const tempConfigPath = path.resolve(targetDir, '.remarkrc.temp.yaml');
         fs.writeFileSync(tempConfigPath, updatedConfig);
 
         console.log(`Created temp config at: ${tempConfigPath}`);
