@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -5,28 +7,35 @@ import { spawn } from 'child_process';
 
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 
-const __dirname = process.cwd();
-verbose(`Current directory: ${__dirname}`);
+// Get the directory where this script is located (adp-devsite-utils repo)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const scriptDir = __dirname;
+
+// Get the current working directory (target repo where the command is run)
+const targetDir = process.cwd();
+
+verbose(`Script directory: ${scriptDir}`);
+verbose(`Target directory: ${targetDir}`);
 
 async function runLint() {
     try {
         logSection('RUN LINT');
         logStep('Starting markdown linting process');
 
-        // Check if package.json exists
-        const packageJsonPath = path.join(__dirname, 'package.json');
+        // Check if package.json exists in target repo
+        const packageJsonPath = path.join(targetDir, 'package.json');
         if (!fs.existsSync(packageJsonPath)) {
-            log('No package.json found in current directory', 'error');
+            log('No package.json found in target directory', 'error');
             console.error('❌ No package.json found.');
             process.exit(1);
         }
 
-        // Check if .remarkrc.yaml exists
-        const remarkConfigPath = path.join(__dirname, '.remarkrc.yaml');
+        // Check if .remarkrc.yaml exists in adp-devsite-utils repo
+        const remarkConfigPath = path.join(scriptDir, '.remarkrc.yaml');
         if (!fs.existsSync(remarkConfigPath)) {
-            log('No .remarkrc.yaml found in current directory', 'error');
-            console.error('❌ No .remarkrc.yaml configuration file found.');
-            console.error('Please create a .remarkrc.yaml file with your linting rules.');
+            log('No .remarkrc.yaml found in adp-devsite-utils repo', 'error');
+            console.error('❌ No .remarkrc.yaml configuration file found in adp-devsite-utils.');
             process.exit(1);
         }
 
@@ -34,16 +43,16 @@ async function runLint() {
         console.log('\nRunning lint:fast script...');
 
         try {
-            // Run the lint:fast script from package.json
+            // Run the lint:fast script from package.json in target repo
             const result = await runNpmScript('lint:fast');
-            
+
             if (result.success) {
                 log('✅ All markdown files passed linting!', 'success');
                 console.log('\n✅ All markdown files passed linting!');
             } else {
                 log('Linting completed with issues', 'warn');
             }
-            
+
         } catch (lintError) {
             log(`Linting failed: ${lintError.message}`, 'error');
             console.error('\n❌ Linting failed:', lintError.message);
@@ -61,11 +70,11 @@ async function runNpmScript(scriptName) {
     return new Promise((resolve, reject) => {
         // Set a reasonable timeout (5 minutes)
         const timeout = 300000; // 5 minutes
-        
+
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
-        
+
         const npmProcess = spawn('npm', ['run', scriptName], {
-            cwd: __dirname,
+            cwd: targetDir, // Run in target repo
             stdio: 'pipe'
         });
 
@@ -88,7 +97,7 @@ async function runNpmScript(scriptName) {
 
         npmProcess.on('close', (code) => {
             clearTimeout(timeoutId);
-            
+
             if (code === 0) {
                 resolve({ success: true, stdout, stderr });
             } else {
