@@ -17,7 +17,7 @@ const REQUIRED_DEPS = [
 
 async function lintRemark() {
   try {
-    // 1. Ensure remark-warnings.yml exists
+    // 1. Ensure remark config file exists
     await ensureRemarkConfig();
     
     // 2. Check and install dependencies if needed
@@ -36,7 +36,7 @@ async function ensureRemarkConfig() {
   const configPath = path.join(TARGET_DIR, REMARK_CONFIG_FILE);
   
   if (!fs.existsSync(configPath)) {
-    console.log('Creating remarkrc.yml...');
+    console.log(`Creating ${REMARK_CONFIG_FILE}...`);
     const configContent = `plugins:
   - remark-heading-id
   - remark-validate-links
@@ -78,7 +78,7 @@ async function ensureDependencies() {
 }
 
 async function runLint() {
-  console.log('Running lint:warnings...');
+  console.log('Running lint...');
   
   try {
     // Try npx first (works with both yarn and npm)
