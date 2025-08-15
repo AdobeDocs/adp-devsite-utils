@@ -10,7 +10,9 @@ const REQUIRED_DEPS = [
   'remark@^15.0.1',
   'remark-cli@^12.0.1', 
   'remark-lint@^10.0.1',
-  'remark-lint-final-newline@^3.0.1'
+  'remark-heading-id@^1.0.1', 
+  'remark-validate-links@^13.0.1', 
+  'remark-lint-no-multiple-toplevel-headings@^3.1.0',
 ];
 
 async function lintRemark() {
@@ -36,8 +38,9 @@ async function ensureRemarkConfig() {
   if (!fs.existsSync(configPath)) {
     console.log('Creating remarkrc.yml...');
     const configContent = `plugins:
-  - remark-lint
-  - remark-lint-final-newline
+  - remark-heading-id
+  - remark-validate-links
+  - remark-lint-no-multiple-toplevel-headings
 `;
     fs.writeFileSync(configPath, configContent);
   }
