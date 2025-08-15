@@ -75,25 +75,23 @@ async function runRemarkWithConfig() {
 
         console.log(`Using config file: ${configPath}`);
 
-        // Set environment variables to prevent git-related errors
-        const env = {
-            ...process.env,
-            GIT_DIR: path.join(scriptDir, '..', '.git'), // Point to adp-devsite-utils .git
-            GIT_WORK_TREE: path.dirname(configPath), // Point to adp-devsite-utils repo
-            GIT_TERMINAL_PROGRESS: '0' // Disable git progress
-        };
+        // Run remark from the adp-devsite-utils directory to maintain git context
+        // but lint the target repo's src/pages directory
+        const adpDevsiteUtilsDir = path.dirname(configPath);
+        const targetSrcPages = path.join(targetDir, 'src', 'pages');
 
-        // Run remark with the config from adp-devsite-utils repo
+        console.log(`Running from: ${adpDevsiteUtilsDir}`);
+        console.log(`Linting directory: ${targetSrcPages}`);
+
         const remarkProcess = spawn('npx', [
             'remark',
-            'src/pages',
+            targetSrcPages,
             '--quiet',
             '--frail',
             '--config', configPath
         ], {
-            cwd: targetDir, // Run in target repo
-            stdio: 'pipe',
-            env: env
+            cwd: adpDevsiteUtilsDir, // Run from adp-devsite-utils repo
+            stdio: 'pipe'
         });
 
         let stdout = '';
@@ -121,7 +119,7 @@ async function runRemarkWithConfig() {
             } else {
                 // Re-run without --quiet to show the actual issues
                 console.log('\nShowing detailed linting issues...');
-                showDetailedIssues(configPath, env);
+                showDetailedIssues(configPath, adpDevsiteUtilsDir, targetSrcPages);
                 resolve({ success: false, stdout, stderr });
             }
         });
@@ -133,17 +131,16 @@ async function runRemarkWithConfig() {
     });
 }
 
-async function showDetailedIssues(configPath, env) {
+async function showDetailedIssues(configPath, adpDevsiteUtilsDir, targetSrcPages) {
     return new Promise((resolve) => {
         const remarkProcess = spawn('npx', [
             'remark',
-            'src/pages',
+            targetSrcPages,
             '--frail',
             '--config', configPath
         ], {
-            cwd: targetDir,
-            stdio: 'inherit',
-            env: env
+            cwd: adpDevsiteUtilsDir, // Run from adp-devsite-utils repo
+            stdio: 'inherit'
         });
 
         remarkProcess.on('close', (code) => {
