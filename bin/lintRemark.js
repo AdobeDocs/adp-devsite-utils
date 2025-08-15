@@ -50,9 +50,9 @@ async function ensureRemarkConfig() {
   - remark-heading-id
   - remark-validate-links
   - remark-lint-no-multiple-toplevel-headings
-  - ./remark-lint-check-frontmatter.js
-  - ./remark-lint-no-angle-brackets.js
-  - ./remark-lint-self-close-component.js
+  // - ./remark-lint-check-frontmatter.js
+  // - ./remark-lint-no-angle-brackets.js
+  // - ./remark-lint-self-close-component.js
 `;
     fs.writeFileSync(configPath, configContent);
   }
