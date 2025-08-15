@@ -1,18 +1,26 @@
 #!/usr/bin/env node
 
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-console.log('Running remark with remark-heading-id plugin...');
+// Get the directory where this script is located (adp-devsite-utils repo)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const adpDevsiteUtilsDir = path.dirname(__dirname);
 
-// Run remark with just the remark-heading-id plugin
+console.log('Running remark with remark-heading-id plugin from adp-devsite-utils...');
+
+// Run remark from the adp-devsite-utils directory (where plugins are installed)
+// but process files from the target repo
 const remarkProcess = spawn('npx', [
     'remark',
-    'src/pages',
+    path.join(process.cwd(), 'src', 'pages'),
     '--quiet',
     '--frail',
     '--use', 'remark-heading-id'
 ], {
-    cwd: process.cwd(),
+    cwd: adpDevsiteUtilsDir, // Run from adp-devsite-utils repo
     stdio: 'inherit'
 });
 
