@@ -18,6 +18,14 @@ const targetDir = process.cwd();
 verbose(`Script directory: ${scriptDir}`);
 verbose(`Target directory: ${targetDir}`);
 
+// Embedded remark configuration
+const EMBEDDED_CONFIG = {
+    plugins: [
+        'remark-heading-id'
+        // Add more plugins here as needed, but avoid git-dependent ones like remark-validate-links
+    ]
+};
+
 async function runLint() {
     try {
         logSection('RUN LINT');
@@ -31,12 +39,12 @@ async function runLint() {
             process.exit(1);
         }
 
-        logStep('Running remark with adp-devsite-utils configuration');
+        logStep('Running remark with embedded configuration');
         console.log('\nRunning remark linting...');
 
         try {
-            // Run remark directly with the adp-devsite-utils config
-            const result = await runRemarkWithConfig();
+            // Run remark with the embedded config
+            const result = await runRemarkWithEmbeddedConfig();
 
             if (result.success) {
                 log('✅ All markdown files passed linting!', 'success');
@@ -58,72 +66,118 @@ async function runLint() {
     }
 }
 
-async function runRemarkWithConfig() {
-    return new Promise((resolve, reject) => {
-        // Set a reasonable timeout (5 minutes)
-        const timeout = 300000; // 5 minutes
+async function runRemarkWithEmbeddedConfig() {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Set a reasonable timeout (5 minutes)
+            const timeout = 300000; // 5 minutes
 
-        console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
+            console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
 
-        // The .remarkrc.yaml is in the root of the adp-devsite-utils repo
-        // Since this script is in bin/, go up one level to get to the root
-        const configPath = path.join(scriptDir, '..', '.remarkrc.yaml');
+            // Create a temporary config file from the embedded config
+            const tempConfigPath = createTempConfigFromEmbedded();
 
-        if (!fs.existsSync(configPath)) {
-            reject(new Error(`Could not find .remarkrc.yaml at ${configPath}`));
-            return;
+            if (!tempConfigPath) {
+                reject(new Error('Failed to create temporary config file'));
+                return;
+            }
+
+            console.log(`Using embedded configuration`);
+
+            // Run remark with the temporary config
+            const remarkProcess = spawn('npx', [
+                'remark',
+                'src/pages',
+                '--quiet',
+                '--frail',
+                '--config', tempConfigPath
+            ], {
+                cwd: targetDir, // Run in target repo
+                stdio: 'pipe'
+            });
+
+            let stdout = '';
+            let stderr = '';
+
+            remarkProcess.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+
+            remarkProcess.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+
+            // Set timeout
+            const timeoutId = setTimeout(() => {
+                remarkProcess.kill('SIGTERM');
+                // Clean up temp file
+                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
+                reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds.`));
+            }, timeout);
+
+            remarkProcess.on('close', (code) => {
+                clearTimeout(timeoutId);
+
+                // Clean up temp file
+                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
+
+                if (code === 0) {
+                    resolve({ success: true, stdout, stderr });
+                } else {
+                    // Re-run without --quiet to show the actual issues
+                    console.log('\nShowing detailed linting issues...');
+                    showDetailedIssues(tempConfigPath);
+                    resolve({ success: false, stdout, stderr });
+                }
+            });
+
+            remarkProcess.on('error', (error) => {
+                clearTimeout(timeoutId);
+                // Clean up temp file
+                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
+                reject(new Error(`Failed to start remark: ${error.message}`));
+            });
+
+        } catch (error) {
+            reject(new Error(`Failed to setup config: ${error.message}`));
+        }
+    });
+}
+
+function createTempConfigFromEmbedded() {
+    try {
+        // Convert the embedded config object to YAML format
+        const configYaml = convertConfigToYaml(EMBEDDED_CONFIG);
+
+        // Create temporary config file in target repo
+        const tempConfigPath = path.join(targetDir, '.remarkrc.temp.yaml');
+        fs.writeFileSync(tempConfigPath, configYaml);
+
+        console.log(`Created temp config at: ${tempConfigPath}`);
+
+        // Verify the file was created
+        if (!fs.existsSync(tempConfigPath)) {
+            console.error(`Failed to create temp config file at ${tempConfigPath}`);
+            return null;
         }
 
-        verbose(`Using config file: ${configPath}`);
-        console.log(`Using config file: ${configPath}`);
+        return tempConfigPath;
 
-        // Run remark with the config from adp-devsite-utils repo
-        const remarkProcess = spawn('npx', [
-            'remark',
-            'src/pages',
-            '--quiet',
-            '--frail',
-            '--config', configPath
-        ], {
-            cwd: targetDir, // Run in target repo
-            stdio: 'pipe'
-        });
+    } catch (error) {
+        console.error('Error creating temp config:', error);
+        return null;
+    }
+}
 
-        let stdout = '';
-        let stderr = '';
+function convertConfigToYaml(config) {
+    // Simple YAML conversion for the embedded config
+    let yaml = 'plugins:\n';
 
-        remarkProcess.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
+    for (const plugin of config.plugins) {
+        yaml += `  - ${plugin}\n`;
+    }
 
-        remarkProcess.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        // Set timeout
-        const timeoutId = setTimeout(() => {
-            remarkProcess.kill('SIGTERM');
-            reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds.`));
-        }, timeout);
-
-        remarkProcess.on('close', (code) => {
-            clearTimeout(timeoutId);
-
-            if (code === 0) {
-                resolve({ success: true, stdout, stderr });
-            } else {
-                // Re-run without --quiet to show the actual issues
-                console.log('\nShowing detailed linting issues...');
-                showDetailedIssues(configPath);
-                resolve({ success: false, stdout, stderr });
-            }
-        });
-
-        remarkProcess.on('error', (error) => {
-            clearTimeout(timeoutId);
-            reject(new Error(`Failed to start remark: ${error.message}`));
-        });
-    });
+    return yaml;
 }
 
 async function showDetailedIssues(configPath) {
