@@ -9,17 +9,32 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const adpDevsiteUtilsDir = path.dirname(__dirname);
 
-console.log('Running remark with remark-heading-id plugin from adp-devsite-utils...');
+// Array of plugins to use - easily add/remove plugins here
+const PLUGINS = [
+    'remark-lint-no-multiple-toplevel-headings',
+    'remark-validate-links'
+    // 'remark-lint-no-dead-links',
+    // 'remark-lint-no-empty-url'
+];
 
-// Run remark from the adp-devsite-utils directory (where plugins are installed)
-// but process files from the target repo
-const remarkProcess = spawn('npx', [
+console.log(`Running remark with ${PLUGINS.length} plugin(s): ${PLUGINS.join(', ')}...`);
+
+// Build the command array with all plugins
+const commandArgs = [
     'remark',
     path.join(process.cwd(), 'src', 'pages'),
     '--quiet',
     '--frail',
-    '--use', 'remark-lint-no-multiple-toplevel-headings'
-], {
+    '--no-config' // Prevent loading .remarkrc.yaml
+];
+
+// Add each plugin with --use flag
+PLUGINS.forEach(plugin => {
+    commandArgs.push('--use', plugin);
+});
+
+// Run remark with the specified plugins
+const remarkProcess = spawn('npx', commandArgs, {
     cwd: adpDevsiteUtilsDir, // Run from adp-devsite-utils repo
     stdio: 'inherit'
 });
