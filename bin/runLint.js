@@ -65,65 +65,93 @@ async function runRemarkWithConfig() {
 
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
 
-        // The .remarkrc.yaml is in the root of the adp-devsite-utils repo
-        // Since this script is in bin/, go up one level to get to the root
-        const configPath = path.join(scriptDir, '..', '.remarkrc.yaml');
+        try {
+            // Create a temporary config file with absolute paths
+            const tempConfigPath = createTempConfig();
 
-        if (!fs.existsSync(configPath)) {
-            reject(new Error(`Could not find .remarkrc.yaml at ${configPath}`));
-            return;
+            verbose(`Using temporary config file: ${tempConfigPath}`);
+            console.log(`Using temporary config file: ${tempConfigPath}`);
+
+            // Run remark with the temporary config
+            const remarkProcess = spawn('npx', [
+                'remark',
+                'src/pages',
+                '--quiet',
+                '--frail',
+                '--config', tempConfigPath
+            ], {
+                cwd: targetDir, // Run in target repo
+                stdio: 'pipe'
+            });
+
+            let stdout = '';
+            let stderr = '';
+
+            remarkProcess.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+
+            remarkProcess.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+
+            // Set timeout
+            const timeoutId = setTimeout(() => {
+                remarkProcess.kill('SIGTERM');
+                // Clean up temp file
+                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
+                reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds.`));
+            }, timeout);
+
+            remarkProcess.on('close', (code) => {
+                clearTimeout(timeoutId);
+
+                // Clean up temp file
+                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
+
+                if (code === 0) {
+                    resolve({ success: true, stdout, stderr });
+                } else {
+                    // Re-run without --quiet to show the actual issues
+                    console.log('\nShowing detailed linting issues...');
+                    showDetailedIssues(tempConfigPath);
+                    resolve({ success: false, stdout, stderr });
+                }
+            });
+
+            remarkProcess.on('error', (error) => {
+                clearTimeout(timeoutId);
+                // Clean up temp file
+                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
+                reject(new Error(`Failed to start remark: ${error.message}`));
+            });
+
+        } catch (error) {
+            reject(new Error(`Failed to create config: ${error.message}`));
         }
-
-        verbose(`Using config file: ${configPath}`);
-        console.log(`Using config file: ${configPath}`);
-
-        // Run remark with the config from adp-devsite-utils repo
-        const remarkProcess = spawn('npx', [
-            'remark',
-            'src/pages',
-            '--quiet',
-            '--frail',
-            '--config', configPath
-        ], {
-            cwd: targetDir, // Run in target repo
-            stdio: 'pipe'
-        });
-
-        let stdout = '';
-        let stderr = '';
-
-        remarkProcess.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
-
-        remarkProcess.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        // Set timeout
-        const timeoutId = setTimeout(() => {
-            remarkProcess.kill('SIGTERM');
-            reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds.`));
-        }, timeout);
-
-        remarkProcess.on('close', (code) => {
-            clearTimeout(timeoutId);
-
-            if (code === 0) {
-                resolve({ success: true, stdout, stderr });
-            } else {
-                // Re-run without --quiet to show the actual issues
-                console.log('\nShowing detailed linting issues...');
-                showDetailedIssues(configPath);
-                resolve({ success: false, stdout, stderr });
-            }
-        });
-
-        remarkProcess.on('error', (error) => {
-            clearTimeout(timeoutId);
-            reject(new Error(`Failed to start remark: ${error.message}`));
-        });
     });
+}
+
+function createTempConfig() {
+    // Read the original config
+    const originalConfigPath = path.join(scriptDir, '..', '.remarkrc.yaml');
+    const configContent = fs.readFileSync(originalConfigPath, 'utf8');
+
+    // Replace relative paths with absolute paths
+    const adpDevsiteUtilsRoot = path.dirname(originalConfigPath);
+    let updatedConfig = configContent;
+
+    // Replace /linter/ paths with absolute paths
+    updatedConfig = updatedConfig.replace(
+      /\/linter\//g,
+      path.join(adpDevsiteUtilsRoot, 'linter', path.sep)
+    );
+
+    // Create temporary config file in target repo
+    const tempConfigPath = path.join(targetDir, '.remarkrc.temp.yaml');
+    fs.writeFileSync(tempConfigPath, updatedConfig);
+
+    return tempConfigPath;
 }
 
 async function showDetailedIssues(configPath) {
