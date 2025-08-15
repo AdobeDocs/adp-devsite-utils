@@ -1,0 +1,92 @@
+#!/usr/bin/env node
+
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+
+const TARGET_DIR = process.cwd();
+const REMARK_CONFIG_FILE = 'remarkrc.yml';
+const REQUIRED_DEPS = [
+  'remark@^15.0.1',
+  'remark-cli@^12.0.1', 
+  'remark-lint@^10.0.1',
+  'remark-lint-final-newline@^3.0.1'
+];
+
+async function lintRemark() {
+  try {
+    // 1. Ensure remark-warnings.yml exists
+    await ensureRemarkConfig();
+    
+    // 2. Check and install dependencies if needed
+    await ensureDependencies();
+    
+    // 3. Run the lint command
+    await runLint();
+    
+  } catch (error) {
+    console.error('Error running lint:warnings:', error.message);
+    process.exit(1);
+  }
+}
+
+async function ensureRemarkConfig() {
+  const configPath = path.join(TARGET_DIR, REMARK_CONFIG_FILE);
+  
+  if (!fs.existsSync(configPath)) {
+    console.log('Creating remarkrc.yml...');
+    const configContent = `plugins:
+  - remark-lint
+  - remark-lint-final-newline
+`;
+    fs.writeFileSync(configPath, configContent);
+  }
+}
+
+async function ensureDependencies() {
+  const packageJsonPath = path.join(TARGET_DIR, 'package.json');
+  
+  if (!fs.existsSync(packageJsonPath)) {
+    throw new Error('package.json not found in target directory');
+  }
+  
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const devDeps = packageJson.devDependencies || {};
+  
+  const missingDeps = REQUIRED_DEPS.filter(dep => {
+    const [name] = dep.split('@');
+    return !devDeps[name];
+  });
+  
+  if (missingDeps.length > 0) {
+    console.log('Installing missing dependencies:', missingDeps.join(', '));
+    
+    try {
+      // Try yarn first, fallback to npm
+      execSync(`yarn add -D ${missingDeps.join(' ')}`, { stdio: 'inherit', cwd: TARGET_DIR });
+    } catch (yarnError) {
+      try {
+        execSync(`npm install --save-dev ${missingDeps.join(' ')}`, { stdio: 'inherit', cwd: TARGET_DIR });
+      } catch (npmError) {
+        throw new Error('Failed to install dependencies with both yarn and npm');
+      }
+    }
+  }
+}
+
+async function runLint() {
+  console.log('Running lint:warnings...');
+  
+  try {
+    // Try npx first (works with both yarn and npm)
+    execSync(`npx remark src/pages --quiet --rc-path ${REMARK_CONFIG_FILE}`, { 
+      stdio: 'inherit',
+      cwd: TARGET_DIR 
+    });
+  } catch (error) {
+    // Exit with the same code as the lint command
+    process.exit(error.status || 1);
+  }
+}
+
+lintRemark();
