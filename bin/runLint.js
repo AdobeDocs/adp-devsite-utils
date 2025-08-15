@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { glob } from 'glob';
+import { spawn } from 'child_process';
 
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 
@@ -39,9 +40,6 @@ async function runLint() {
 
         logStep('Running remark linting');
         console.log(`\nLinting ${markdownFiles.length} markdown files...`);
-
-        // Use spawn with timeout instead of execSync to avoid hanging
-        const { spawn } = await import('child_process');
 
         try {
             // Run remark with timeout and progress indication
@@ -117,8 +115,6 @@ async function runRemarkWithTimeout(fileCount) {
 }
 
 async function showDetailedIssues() {
-    const { spawn } = await import('child_process');
-
     return new Promise((resolve) => {
         const remarkProcess = spawn('npx', ['remark', '.', '--frail'], {
             cwd: __dirname,
