@@ -65,17 +65,23 @@ async function runRemarkWithConfig() {
 
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
 
-        // The .remarkrc.yaml is in the root of the adp-devsite-utils repo
-        // Since this script is in bin/, go up one level to get to the root
-        const configPath = path.join(scriptDir, '..', '.remarkrc.yaml');
+        // Get the absolute path to the .remarkrc.yaml in adp-devsite-utils repo
+        const configPath = path.resolve(scriptDir, '..', '.remarkrc.yaml');
 
         if (!fs.existsSync(configPath)) {
             reject(new Error(`Could not find .remarkrc.yaml at ${configPath}`));
             return;
         }
 
-        verbose(`Using config file: ${configPath}`);
         console.log(`Using config file: ${configPath}`);
+
+        // Set environment variables to prevent git-related errors
+        const env = {
+            ...process.env,
+            GIT_DIR: path.join(scriptDir, '..', '.git'), // Point to adp-devsite-utils .git
+            GIT_WORK_TREE: path.dirname(configPath), // Point to adp-devsite-utils repo
+            GIT_TERMINAL_PROGRESS: '0' // Disable git progress
+        };
 
         // Run remark with the config from adp-devsite-utils repo
         const remarkProcess = spawn('npx', [
@@ -86,7 +92,8 @@ async function runRemarkWithConfig() {
             '--config', configPath
         ], {
             cwd: targetDir, // Run in target repo
-            stdio: 'pipe'
+            stdio: 'pipe',
+            env: env
         });
 
         let stdout = '';
@@ -114,7 +121,7 @@ async function runRemarkWithConfig() {
             } else {
                 // Re-run without --quiet to show the actual issues
                 console.log('\nShowing detailed linting issues...');
-                showDetailedIssues(configPath);
+                showDetailedIssues(configPath, env);
                 resolve({ success: false, stdout, stderr });
             }
         });
@@ -126,7 +133,7 @@ async function runRemarkWithConfig() {
     });
 }
 
-async function showDetailedIssues(configPath) {
+async function showDetailedIssues(configPath, env) {
     return new Promise((resolve) => {
         const remarkProcess = spawn('npx', [
             'remark',
@@ -135,7 +142,8 @@ async function showDetailedIssues(configPath) {
             '--config', configPath
         ], {
             cwd: targetDir,
-            stdio: 'inherit'
+            stdio: 'inherit',
+            env: env
         });
 
         remarkProcess.on('close', (code) => {
