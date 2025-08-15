@@ -18,7 +18,7 @@ const remarkProcess = spawn('npx', [
     path.join(process.cwd(), 'src', 'pages'),
     '--quiet',
     '--frail',
-    '--use', 'remark-heading-id'
+    '--use', 'remark-lint-no-multiple-toplevel-headings'
 ], {
     cwd: adpDevsiteUtilsDir, // Run from adp-devsite-utils repo
     stdio: 'inherit'

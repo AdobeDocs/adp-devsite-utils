@@ -1,2 +1,2 @@
 plugins:
-  - remark-heading-id
+  - remark-lint-no-multiple-toplevel-headings
