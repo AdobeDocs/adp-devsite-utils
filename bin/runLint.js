@@ -65,14 +65,25 @@ async function runRemarkWithConfig() {
 
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
 
+        // The .remarkrc.yaml is in the root of the adp-devsite-utils repo
+        // Since this script is in bin/, go up one level to get to the root
+        const configPath = path.join(scriptDir, '..', '.remarkrc.yaml');
+
+        if (!fs.existsSync(configPath)) {
+            reject(new Error(`Could not find .remarkrc.yaml at ${configPath}`));
+            return;
+        }
+
+        verbose(`Using config file: ${configPath}`);
+        console.log(`Using config file: ${configPath}`);
+
         // Run remark with the config from adp-devsite-utils repo
-        // Use --config flag to specify the config file location
         const remarkProcess = spawn('npx', [
             'remark',
             'src/pages',
             '--quiet',
             '--frail',
-            '--config', path.join(scriptDir, '.remarkrc.yaml')
+            '--config', configPath
         ], {
             cwd: targetDir, // Run in target repo
             stdio: 'pipe'
@@ -103,7 +114,7 @@ async function runRemarkWithConfig() {
             } else {
                 // Re-run without --quiet to show the actual issues
                 console.log('\nShowing detailed linting issues...');
-                showDetailedIssues();
+                showDetailedIssues(configPath);
                 resolve({ success: false, stdout, stderr });
             }
         });
@@ -115,13 +126,13 @@ async function runRemarkWithConfig() {
     });
 }
 
-async function showDetailedIssues() {
+async function showDetailedIssues(configPath) {
     return new Promise((resolve) => {
         const remarkProcess = spawn('npx', [
             'remark',
             'src/pages',
             '--frail',
-            '--config', path.join(scriptDir, '.remarkrc.yaml')
+            '--config', configPath
         ], {
             cwd: targetDir,
             stdio: 'inherit'
