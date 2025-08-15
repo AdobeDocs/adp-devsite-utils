@@ -65,122 +65,65 @@ async function runRemarkWithConfig() {
 
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
 
-        try {
-            // Create a temporary config file with absolute paths
-            const tempConfigPath = createTempConfig();
+        // The .remarkrc.yaml is in the root of the adp-devsite-utils repo
+        // Since this script is in bin/, go up one level to get to the root
+        const configPath = path.join(scriptDir, '..', '.remarkrc.yaml');
 
-            verbose(`Using temporary config file: ${tempConfigPath}`);
-            console.log(`Using temporary config file: ${tempConfigPath}`);
+        if (!fs.existsSync(configPath)) {
+            reject(new Error(`Could not find .remarkrc.yaml at ${configPath}`));
+            return;
+        }
 
-            // Verify the temp file exists
-            if (!fs.existsSync(tempConfigPath)) {
-                throw new Error(`Failed to create temporary config file at ${tempConfigPath}`);
+        verbose(`Using config file: ${configPath}`);
+        console.log(`Using config file: ${configPath}`);
+
+        // Run remark with the config from adp-devsite-utils repo
+        const remarkProcess = spawn('npx', [
+            'remark',
+            'src/pages',
+            '--quiet',
+            '--frail',
+            '--config', configPath
+        ], {
+            cwd: targetDir, // Run in target repo
+            stdio: 'pipe'
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        remarkProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        remarkProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        // Set timeout
+        const timeoutId = setTimeout(() => {
+            remarkProcess.kill('SIGTERM');
+            reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds.`));
+        }, timeout);
+
+        remarkProcess.on('close', (code) => {
+            clearTimeout(timeoutId);
+
+            if (code === 0) {
+                resolve({ success: true, stdout, stderr });
+            } else {
+                // Re-run without --quiet to show the actual issues
+                console.log('\nShowing detailed linting issues...');
+                showDetailedIssues(configPath);
+                resolve({ success: false, stdout, stderr });
             }
+        });
 
-            // Run remark with the temporary config using absolute path
-            const remarkProcess = spawn('npx', [
-                'remark',
-                'src/pages',
-                '--quiet',
-                '--frail',
-                '--config', tempConfigPath
-            ], {
-                cwd: targetDir, // Run in target repo
-                stdio: 'pipe'
-            });
-
-            let stdout = '';
-            let stderr = '';
-
-            remarkProcess.stdout.on('data', (data) => {
-                stdout += data.toString();
-            });
-
-            remarkProcess.stderr.on('data', (data) => {
-                stderr += data.toString();
-            });
-
-            // Set timeout
-            const timeoutId = setTimeout(() => {
-                remarkProcess.kill('SIGTERM');
-                // Clean up temp file
-                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
-                reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds.`));
-            }, timeout);
-
-            remarkProcess.on('close', (code) => {
-                clearTimeout(timeoutId);
-
-                // Clean up temp file
-                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
-
-                if (code === 0) {
-                    resolve({ success: true, stdout, stderr });
-                } else {
-                    // Re-run without --quiet to show the actual issues
-                    console.log('\nShowing detailed linting issues...');
-                    showDetailedIssues(tempConfigPath);
-                    resolve({ success: false, stdout, stderr });
-                }
-            });
-
-            remarkProcess.on('error', (error) => {
-                clearTimeout(timeoutId);
-                // Clean up temp file
-                try { fs.unlinkSync(tempConfigPath); } catch (e) {}
-                reject(new Error(`Failed to start remark: ${error.message}`));
-            });
-
-        } catch (error) {
-            reject(new Error(`Failed to create config: ${error.message}`));
-        }
+        remarkProcess.on('error', (error) => {
+            clearTimeout(timeoutId);
+            reject(new Error(`Failed to start remark: ${error.message}`));
+        });
     });
-}
-
-function createTempConfig() {
-    try {
-        // Read the original config
-        const originalConfigPath = path.join(scriptDir, '..', '.remarkrc.yaml');
-        console.log(`Reading config from: ${originalConfigPath}`);
-
-        if (!fs.existsSync(originalConfigPath)) {
-            throw new Error(`Original config not found at ${originalConfigPath}`);
-        }
-
-        const configContent = fs.readFileSync(originalConfigPath, 'utf8');
-        console.log(`Original config content:\n${configContent}`);
-
-        // Replace relative paths with absolute paths
-        const adpDevsiteUtilsRoot = path.dirname(originalConfigPath);
-        console.log(`ADP devsite utils root: ${adpDevsiteUtilsRoot}`);
-
-        let updatedConfig = configContent;
-
-        // Replace /linter/ paths with absolute paths
-        updatedConfig = updatedConfig.replace(
-          /\/linter\//g,
-          path.join(adpDevsiteUtilsRoot, 'linter', path.sep)
-        );
-
-        console.log(`Updated config content:\n${updatedConfig}`);
-
-        // Create temporary config file in target repo with absolute path
-        const tempConfigPath = path.resolve(targetDir, '.remarkrc.temp.yaml');
-        fs.writeFileSync(tempConfigPath, updatedConfig);
-
-        console.log(`Created temp config at: ${tempConfigPath}`);
-
-        // Verify the file was created
-        if (!fs.existsSync(tempConfigPath)) {
-            throw new Error(`Failed to create temp config file at ${tempConfigPath}`);
-        }
-
-        return tempConfigPath;
-
-    } catch (error) {
-        console.error('Error in createTempConfig:', error);
-        throw error;
-    }
 }
 
 async function showDetailedIssues(configPath) {

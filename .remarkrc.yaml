@@ -2,6 +2,6 @@ plugins:
   - remark-heading-id
   - remark-validate-links
   - remark-lint-no-multiple-toplevel-headings
-  - /linter/.remark-lint-check-frontmatter.js
-  - /linter/.remark-lint-no-angle-brackets.js
-  - /linter/.remark-lint-self-close-component.js
+  - /linter/remark-lint-check-frontmatter.js
+  - /linter/remark-lint-no-angle-brackets.js
+  - /linter/remark-lint-self-close-component.js
