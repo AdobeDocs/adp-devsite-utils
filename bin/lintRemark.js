@@ -83,7 +83,7 @@ async function runLint() {
   
   try {
     // Try npx (works with both yarn and npm)
-    execSync(`npx remark src/pages --quiet --rc-path ${REMARK_CONFIG_FILE}`, { 
+    execSync(`npx remark src/pages --quiet --rc-path ${path.join(REMARK_CONFIG_DIR, REMARK_CONFIG_FILE)}`, { 
       stdio: 'inherit',
       cwd: ROOT_DIR 
     });
