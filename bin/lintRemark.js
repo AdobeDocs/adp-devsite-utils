@@ -7,6 +7,7 @@ import { execSync } from 'child_process';
 const ROOT_DIR = process.cwd();
 const REMARK_CONFIG_DIR = path.join(ROOT_DIR, '.github/linters');
 const REMARK_CONFIG_FILE = 'remarkrc.yml';
+const UTILS_LINTERS_DIR = path.join(__dirname, '../linters');
 const REQUIRED_DEPS = [
   'remark@^15.0.1',
   'remark-cli@^12.0.1', 
