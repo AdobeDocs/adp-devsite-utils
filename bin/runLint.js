@@ -31,12 +31,12 @@ async function runLint() {
             process.exit(1);
         }
 
-        logStep('Running remark with minimal configuration to isolate git issue');
+        logStep('Running remark with adp-devsite-utils configuration');
         console.log('\nRunning remark linting...');
 
         try {
-            // First, try with just basic remark to see if the issue is with our custom plugins
-            const result = await runRemarkWithMinimalConfig();
+            // Run remark directly with the adp-devsite-utils config
+            const result = await runRemarkWithConfig();
 
             if (result.success) {
                 log('✅ All markdown files passed linting!', 'success');
@@ -58,21 +58,21 @@ async function runLint() {
     }
 }
 
-async function runRemarkWithMinimalConfig() {
+async function runRemarkWithConfig() {
     return new Promise((resolve, reject) => {
         // Set a reasonable timeout (5 minutes)
         const timeout = 300000; // 5 minutes
 
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
 
-        // Try with just basic remark first, no custom config
-        console.log('Testing with basic remark configuration...');
-
+        // Run remark with the config from adp-devsite-utils repo
+        // Use --config flag to specify the config file location
         const remarkProcess = spawn('npx', [
             'remark',
             'src/pages',
             '--quiet',
-            '--frail'
+            '--frail',
+            '--config', path.join(scriptDir, '.remarkrc.yaml')
         ], {
             cwd: targetDir, // Run in target repo
             stdio: 'pipe'
@@ -99,13 +99,11 @@ async function runRemarkWithMinimalConfig() {
             clearTimeout(timeoutId);
 
             if (code === 0) {
-                console.log('✅ Basic remark worked! Now trying with full config...');
-                // If basic remark worked, try with full config
-                runRemarkWithFullConfig().then(resolve).catch(reject);
+                resolve({ success: true, stdout, stderr });
             } else {
-                console.log('❌ Basic remark failed. This suggests the issue is with remark itself, not our config.');
-                console.log('stdout:', stdout);
-                console.log('stderr:', stderr);
+                // Re-run without --quiet to show the actual issues
+                console.log('\nShowing detailed linting issues...');
+                showDetailedIssues();
                 resolve({ success: false, stdout, stderr });
             }
         });
@@ -117,64 +115,13 @@ async function runRemarkWithMinimalConfig() {
     });
 }
 
-async function runRemarkWithFullConfig() {
-    return new Promise((resolve, reject) => {
-        // Get the absolute path to the .remarkrc.yaml in adp-devsite-utils repo
-        const configPath = path.resolve(scriptDir, '..', '.remarkrc.yaml');
-
-        if (!fs.existsSync(configPath)) {
-            reject(new Error(`Could not find .remarkrc.yaml at ${configPath}`));
-            return;
-        }
-
-        console.log(`Using config file: ${configPath}`);
-
-        const remarkProcess = spawn('npx', [
-            'remark',
-            'src/pages',
-            '--quiet',
-            '--frail',
-            '--config', configPath
-        ], {
-            cwd: targetDir, // Run in target repo
-            stdio: 'pipe'
-        });
-
-        let stdout = '';
-        let stderr = '';
-
-        remarkProcess.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
-
-        remarkProcess.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        remarkProcess.on('close', (code) => {
-            if (code === 0) {
-                resolve({ success: true, stdout, stderr });
-            } else {
-                // Re-run without --quiet to show the actual issues
-                console.log('\nShowing detailed linting issues...');
-                showDetailedIssues(configPath);
-                resolve({ success: false, stdout, stderr });
-            }
-        });
-
-        remarkProcess.on('error', (error) => {
-            reject(new Error(`Failed to start remark: ${error.message}`));
-        });
-    });
-}
-
-async function showDetailedIssues(configPath) {
+async function showDetailedIssues() {
     return new Promise((resolve) => {
         const remarkProcess = spawn('npx', [
             'remark',
             'src/pages',
             '--frail',
-            '--config', configPath
+            '--config', path.join(scriptDir, '.remarkrc.yaml')
         ], {
             cwd: targetDir,
             stdio: 'inherit'
