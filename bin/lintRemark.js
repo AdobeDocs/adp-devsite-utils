@@ -21,10 +21,13 @@ async function lintRemark() {
     // 1. Ensure remark config file exists
     await ensureRemarkConfig();
     
-    // 2. Check and install dependencies if needed
+    // 2. Ensure linters files exist
+    await ensureLinters();
+    
+    // 3. Check and install dependencies if needed
     await ensureDependencies();
     
-    // 3. Run the lint command
+    // 4. Run the lint command
     await runLint();
     
   } catch (error) {
@@ -42,9 +45,38 @@ async function ensureRemarkConfig() {
   - remark-heading-id
   - remark-validate-links
   - remark-lint-no-multiple-toplevel-headings
+  - ./remark-lint-check-frontmatter.js
+  - ./remark-lint-no-angle-brackets.js
+  - ./remark-lint-self-close-component.js
 `;
     fs.writeFileSync(configPath, configContent);
   }
+}
+
+async function ensureLinters() {
+  console.log('Copying linters to .github/linters...');
+  
+  // Ensure the target directory exists
+  if (!fs.existsSync(REMARK_CONFIG_DIR)) {
+    fs.mkdirSync(REMARK_CONFIG_DIR, { recursive: true });
+  }
+  
+  // Read the linters directory from adp-devsite-utils
+  if (!fs.existsSync(UTILS_LINTERS_DIR)) {
+    throw new Error(`Linters directory not found at ${UTILS_LINTERS_DIR}`);
+  }
+  
+  const linterFiles = fs.readdirSync(UTILS_LINTERS_DIR);
+  
+  linterFiles.forEach(file => {
+    if (file.endsWith('.js')) {
+      const sourcePath = path.join(UTILS_LINTERS_DIR, file);
+      const targetPath = path.join(REMARK_CONFIG_DIR, file);
+      
+      fs.copyFileSync(sourcePath, targetPath);
+      console.log(`  Copied ${file}`);
+    }
+  });
 }
 
 async function ensureDependencies() {
