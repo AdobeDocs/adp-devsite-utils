@@ -40,38 +40,24 @@ async function runLint() {
         logStep('Running remark linting');
         console.log(`\nLinting ${markdownFiles.length} markdown files...`);
 
-        // Use npx to run remark with the local config
-        const { execSync } = await import('child_process');
+        // Use spawn with timeout instead of execSync to avoid hanging
+        const { spawn } = await import('child_process');
 
         try {
-            // Run remark lint on all markdown files
-            const result = execSync('npx remark . --quiet --frail', {
-                cwd: __dirname,
-                stdio: 'pipe',
-                encoding: 'utf8'
-            });
+            // Run remark with timeout and progress indication
+            const result = await runRemarkWithTimeout(markdownFiles.length);
 
-            // If we get here, no issues were found
-            log('✅ All markdown files passed linting!', 'success');
-            console.log('\n✅ All markdown files passed linting!');
-
-        } catch (lintError) {
-            // remark exits with non-zero code when issues are found
-            if (lintError.status !== 0) {
-                // Re-run without --quiet to show the actual issues
-                try {
-                    execSync('npx remark . --frail', {
-                        cwd: __dirname,
-                        stdio: 'inherit'
-                    });
-                } catch (showError) {
-                    // This will show the linting issues
-                    console.error('\n❌ Linting failed with the following issues:');
-                    process.exit(1);
-                }
+            if (result.success) {
+                log('✅ All markdown files passed linting!', 'success');
+                console.log('\n✅ All markdown files passed linting!');
             } else {
                 log('Linting completed with issues', 'warn');
             }
+
+        } catch (lintError) {
+            log(`Linting failed: ${lintError.message}`, 'error');
+            console.error('\n❌ Linting failed:', lintError.message);
+            process.exit(1);
         }
 
     } catch (err) {
@@ -79,6 +65,70 @@ async function runLint() {
         console.error('Error while running lint:', err);
         process.exit(1);
     }
+}
+
+async function runRemarkWithTimeout(fileCount) {
+    return new Promise((resolve, reject) => {
+        // Set a reasonable timeout (5 minutes for large repos)
+        const timeout = Math.max(60000, fileCount * 1000); // 1 second per file, minimum 1 minute
+
+        console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
+
+        const remarkProcess = spawn('npx', ['remark', '.', '--quiet', '--frail'], {
+            cwd: __dirname,
+            stdio: 'pipe'
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        remarkProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        remarkProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        // Set timeout
+        const timeoutId = setTimeout(() => {
+            remarkProcess.kill('SIGTERM');
+            reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds. Try running with fewer files or increase timeout.`));
+        }, timeout);
+
+        remarkProcess.on('close', (code) => {
+            clearTimeout(timeoutId);
+
+            if (code === 0) {
+                resolve({ success: true, stdout, stderr });
+            } else {
+                // Re-run without --quiet to show the actual issues
+                console.log('\nShowing detailed linting issues...');
+                showDetailedIssues();
+                resolve({ success: false, stdout, stderr });
+            }
+        });
+
+        remarkProcess.on('error', (error) => {
+            clearTimeout(timeoutId);
+            reject(new Error(`Failed to start remark: ${error.message}`));
+        });
+    });
+}
+
+async function showDetailedIssues() {
+    const { spawn } = await import('child_process');
+
+    return new Promise((resolve) => {
+        const remarkProcess = spawn('npx', ['remark', '.', '--frail'], {
+            cwd: __dirname,
+            stdio: 'inherit'
+        });
+
+        remarkProcess.on('close', (code) => {
+            resolve();
+        });
+    });
 }
 
 // Call the main function
