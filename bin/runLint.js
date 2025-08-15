@@ -31,20 +31,12 @@ async function runLint() {
             process.exit(1);
         }
 
-        // Check if .remarkrc.yaml exists in adp-devsite-utils repo
-        const remarkConfigPath = path.join(scriptDir, '.remarkrc.yaml');
-        if (!fs.existsSync(remarkConfigPath)) {
-            log('No .remarkrc.yaml found in adp-devsite-utils repo', 'error');
-            console.error('❌ No .remarkrc.yaml configuration file found in adp-devsite-utils.');
-            process.exit(1);
-        }
-
-        logStep('Running lint:fast script from package.json');
-        console.log('\nRunning lint:fast script...');
+        logStep('Running remark with adp-devsite-utils configuration');
+        console.log('\nRunning remark linting...');
 
         try {
-            // Run the lint:fast script from package.json in target repo
-            const result = await runNpmScript('lint:fast');
+            // Run remark directly with the adp-devsite-utils config
+            const result = await runRemarkWithConfig();
 
             if (result.success) {
                 log('✅ All markdown files passed linting!', 'success');
@@ -66,14 +58,22 @@ async function runLint() {
     }
 }
 
-async function runNpmScript(scriptName) {
+async function runRemarkWithConfig() {
     return new Promise((resolve, reject) => {
         // Set a reasonable timeout (5 minutes)
         const timeout = 300000; // 5 minutes
 
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
 
-        const npmProcess = spawn('npm', ['run', scriptName], {
+        // Run remark with the config from adp-devsite-utils repo
+        // Use --config flag to specify the config file location
+        const remarkProcess = spawn('npx', [
+            'remark',
+            'src/pages',
+            '--quiet',
+            '--frail',
+            '--config', path.join(scriptDir, '.remarkrc.yaml')
+        ], {
             cwd: targetDir, // Run in target repo
             stdio: 'pipe'
         });
@@ -81,36 +81,54 @@ async function runNpmScript(scriptName) {
         let stdout = '';
         let stderr = '';
 
-        npmProcess.stdout.on('data', (data) => {
+        remarkProcess.stdout.on('data', (data) => {
             stdout += data.toString();
         });
 
-        npmProcess.stderr.on('data', (data) => {
+        remarkProcess.stderr.on('data', (data) => {
             stderr += data.toString();
         });
 
         // Set timeout
         const timeoutId = setTimeout(() => {
-            npmProcess.kill('SIGTERM');
+            remarkProcess.kill('SIGTERM');
             reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds.`));
         }, timeout);
 
-        npmProcess.on('close', (code) => {
+        remarkProcess.on('close', (code) => {
             clearTimeout(timeoutId);
 
             if (code === 0) {
                 resolve({ success: true, stdout, stderr });
             } else {
-                // Show the output from the failed npm script
-                if (stdout) console.log('\nScript output:', stdout);
-                if (stderr) console.error('\nScript errors:', stderr);
+                // Re-run without --quiet to show the actual issues
+                console.log('\nShowing detailed linting issues...');
+                showDetailedIssues();
                 resolve({ success: false, stdout, stderr });
             }
         });
 
-        npmProcess.on('error', (error) => {
+        remarkProcess.on('error', (error) => {
             clearTimeout(timeoutId);
-            reject(new Error(`Failed to run npm script: ${error.message}`));
+            reject(new Error(`Failed to start remark: ${error.message}`));
+        });
+    });
+}
+
+async function showDetailedIssues() {
+    return new Promise((resolve) => {
+        const remarkProcess = spawn('npx', [
+            'remark',
+            'src/pages',
+            '--frail',
+            '--config', path.join(scriptDir, '.remarkrc.yaml')
+        ], {
+            cwd: targetDir,
+            stdio: 'inherit'
+        });
+
+        remarkProcess.on('close', (code) => {
+            resolve();
         });
     });
 }
