@@ -1,9 +1,6 @@
-#!/usr/bin/env node
-
 import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { glob } from 'glob';
 import { spawn } from 'child_process';
 
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
@@ -16,18 +13,13 @@ async function runLint() {
         logSection('RUN LINT');
         logStep('Starting markdown linting process');
 
-        // Check if we're in a repo with markdown files
-        const markdownFiles = await glob('**/*.md', {
-            ignore: ['node_modules/**', '.git/**', 'dist/**', 'build/**', '**/node_modules/**']
-        });
-
-        if (markdownFiles.length === 0) {
-            log('No markdown files found to lint', 'warn');
-            console.log('No markdown files found in current directory or subdirectories.');
-            return;
+        // Check if package.json exists
+        const packageJsonPath = path.join(__dirname, 'package.json');
+        if (!fs.existsSync(packageJsonPath)) {
+            log('No package.json found in current directory', 'error');
+            console.error('❌ No package.json found.');
+            process.exit(1);
         }
-
-        verbose(`Found ${markdownFiles.length} markdown files to lint`);
 
         // Check if .remarkrc.yaml exists
         const remarkConfigPath = path.join(__dirname, '.remarkrc.yaml');
@@ -38,20 +30,20 @@ async function runLint() {
             process.exit(1);
         }
 
-        logStep('Running remark linting');
-        console.log(`\nLinting ${markdownFiles.length} markdown files...`);
+        logStep('Running lint:fast script from package.json');
+        console.log('\nRunning lint:fast script...');
 
         try {
-            // Run remark with timeout and progress indication
-            const result = await runRemarkWithTimeout(markdownFiles.length);
-
+            // Run the lint:fast script from package.json
+            const result = await runNpmScript('lint:fast');
+            
             if (result.success) {
                 log('✅ All markdown files passed linting!', 'success');
                 console.log('\n✅ All markdown files passed linting!');
             } else {
                 log('Linting completed with issues', 'warn');
             }
-
+            
         } catch (lintError) {
             log(`Linting failed: ${lintError.message}`, 'error');
             console.error('\n❌ Linting failed:', lintError.message);
@@ -65,14 +57,14 @@ async function runLint() {
     }
 }
 
-async function runRemarkWithTimeout(fileCount) {
+async function runNpmScript(scriptName) {
     return new Promise((resolve, reject) => {
-        // Set a reasonable timeout (5 minutes for large repos)
-        const timeout = Math.max(60000, fileCount * 1000); // 1 second per file, minimum 1 minute
-
+        // Set a reasonable timeout (5 minutes)
+        const timeout = 300000; // 5 minutes
+        
         console.log(`Setting timeout to ${Math.round(timeout/1000)} seconds...`);
-
-        const remarkProcess = spawn('npx', ['remark', '.', '--quiet', '--frail'], {
+        
+        const npmProcess = spawn('npm', ['run', scriptName], {
             cwd: __dirname,
             stdio: 'pipe'
         });
@@ -80,49 +72,36 @@ async function runRemarkWithTimeout(fileCount) {
         let stdout = '';
         let stderr = '';
 
-        remarkProcess.stdout.on('data', (data) => {
+        npmProcess.stdout.on('data', (data) => {
             stdout += data.toString();
         });
 
-        remarkProcess.stderr.on('data', (data) => {
+        npmProcess.stderr.on('data', (data) => {
             stderr += data.toString();
         });
 
         // Set timeout
         const timeoutId = setTimeout(() => {
-            remarkProcess.kill('SIGTERM');
-            reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds. Try running with fewer files or increase timeout.`));
+            npmProcess.kill('SIGTERM');
+            reject(new Error(`Linting timed out after ${Math.round(timeout/1000)} seconds.`));
         }, timeout);
 
-        remarkProcess.on('close', (code) => {
+        npmProcess.on('close', (code) => {
             clearTimeout(timeoutId);
-
+            
             if (code === 0) {
                 resolve({ success: true, stdout, stderr });
             } else {
-                // Re-run without --quiet to show the actual issues
-                console.log('\nShowing detailed linting issues...');
-                showDetailedIssues();
+                // Show the output from the failed npm script
+                if (stdout) console.log('\nScript output:', stdout);
+                if (stderr) console.error('\nScript errors:', stderr);
                 resolve({ success: false, stdout, stderr });
             }
         });
 
-        remarkProcess.on('error', (error) => {
+        npmProcess.on('error', (error) => {
             clearTimeout(timeoutId);
-            reject(new Error(`Failed to start remark: ${error.message}`));
-        });
-    });
-}
-
-async function showDetailedIssues() {
-    return new Promise((resolve) => {
-        const remarkProcess = spawn('npx', ['remark', '.', '--frail'], {
-            cwd: __dirname,
-            stdio: 'inherit'
-        });
-
-        remarkProcess.on('close', (code) => {
-            resolve();
+            reject(new Error(`Failed to run npm script: ${error.message}`));
         });
     });
 }
