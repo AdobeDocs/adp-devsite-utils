@@ -2,17 +2,16 @@ import { visit } from 'unist-util-visit'
 
 const remarkLintCheckFrontmatter = () => {
   return (tree, file) => {
-    console.log('🔍 Running frontmatter validation...')
     
     let hasFrontmatter = false
     let frontmatterNode = null
-    
+
     // Find the frontmatter node
     visit(tree, 'yaml', (node) => {
       hasFrontmatter = true
       frontmatterNode = node
     })
-    
+
     if (!hasFrontmatter) {
       file.message(
         'Missing frontmatter section - add --- at the beginning with title and description',
@@ -21,42 +20,42 @@ const remarkLintCheckFrontmatter = () => {
       )
       return
     }
-    
+
     try {
       // Parse the YAML content
       const yamlContent = frontmatterNode.value
       const lines = yamlContent.split('\n')
-      
+
       let title = null
       let description = null
       let titleLine = 0
       let descriptionLine = 0
-      
+
       // Check each line for title and description
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim()
-        
+
         if (line.startsWith('title:')) {
           title = line.substring(6).trim()
           titleLine = i + 1
           // Remove quotes if present
-          if ((title.startsWith('"') && title.endsWith('"')) || 
+          if ((title.startsWith('"') && title.endsWith('"')) ||
               (title.startsWith("'") && title.endsWith("'"))) {
             title = title.slice(1, -1)
           }
         }
-        
+
         if (line.startsWith('description:')) {
           description = line.substring(12).trim()
           descriptionLine = i + 1
           // Remove quotes if present
-          if ((description.startsWith('"') && description.endsWith('"')) || 
+          if ((description.startsWith('"') && description.endsWith('"')) ||
               (description.startsWith("'") && description.endsWith("'"))) {
             description = description.slice(1, -1)
           }
         }
       }
-      
+
       // Check if title exists and is not empty
       if (!title || title === '') {
         const position = {
@@ -69,7 +68,7 @@ const remarkLintCheckFrontmatter = () => {
             column: frontmatterNode.position.start.column + 6
           }
         }
-        
+
         file.message(
           'Missing or empty title in frontmatter',
           position,
@@ -78,7 +77,7 @@ const remarkLintCheckFrontmatter = () => {
       } else {
         console.log(`  ✅ Found title: "${title}"`)
       }
-      
+
       // Check if description exists and is not empty
       if (!description || description === '') {
         const position = {
@@ -91,7 +90,7 @@ const remarkLintCheckFrontmatter = () => {
             column: frontmatterNode.position.start.column + 12
           }
         }
-        
+
         file.message(
           'Missing or empty description in frontmatter',
           position,
@@ -100,7 +99,7 @@ const remarkLintCheckFrontmatter = () => {
       } else {
         console.log(`  ✅ Found description: "${description}"`)
       }
-      
+
       // Additional validation: check title length
       if (title && title.length > 60) {
         const position = {
@@ -113,14 +112,14 @@ const remarkLintCheckFrontmatter = () => {
             column: frontmatterNode.position.start.column + 6
           }
         }
-        
+
         file.message(
           `Title is too long (${title.length} characters). Consider keeping it under 60 characters.`,
           position,
           'remark-lint:check-frontmatter'
         )
       }
-      
+
       // Additional validation: check description length
       if (description && description.length > 160) {
         const position = {
@@ -133,14 +132,14 @@ const remarkLintCheckFrontmatter = () => {
             column: frontmatterNode.position.start.column + 12
           }
         }
-        
+
         file.message(
           `Description is too long (${description.length} characters). Consider keeping it under 160 characters.`,
           position,
           'remark-lint:check-frontmatter'
         )
       }
-      
+
     } catch (error) {
       file.message(
         `Error parsing frontmatter: ${error.message}`,
@@ -148,7 +147,7 @@ const remarkLintCheckFrontmatter = () => {
         'remark-lint:check-frontmatter'
       )
     }
-    
+
     console.log('✅ Frontmatter validation complete!')
   }
 }
