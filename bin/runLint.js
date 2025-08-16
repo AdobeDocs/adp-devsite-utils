@@ -12,7 +12,9 @@ const adpDevsiteUtilsDir = path.dirname(__dirname);
 // Array of plugins to use - easily add/remove plugins here
 const PLUGINS = [
     'remark-lint-no-multiple-toplevel-headings',
-    'remark-validate-links'
+    'remark-validate-links',
+    'remark-gfm',
+    'remark-lint-no-hidden-table-cell'
     // 'remark-lint-no-dead-links',
     // 'remark-lint-no-empty-url'
 ];
