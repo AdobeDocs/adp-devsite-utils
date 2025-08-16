@@ -14,7 +14,8 @@ const PLUGINS = [
     'remark-lint-no-multiple-toplevel-headings',
     'remark-validate-links',
     'remark-gfm',
-    'remark-lint-no-hidden-table-cell'
+    'remark-lint-no-hidden-table-cell',
+    './linter/remark-lint-check-frontmatter'
     // 'remark-lint-no-dead-links',
     // 'remark-lint-no-empty-url'
 ];
