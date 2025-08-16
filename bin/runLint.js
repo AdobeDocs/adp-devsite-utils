@@ -15,7 +15,7 @@ const PLUGINS = [
     'remark-validate-links',
     'remark-gfm',
     'remark-lint-no-hidden-table-cell',
-    './linter/remark-lint-check-frontmatter'
+    path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-check-frontmatter.js')
     // 'remark-lint-no-dead-links',
     // 'remark-lint-no-empty-url'
 ];
