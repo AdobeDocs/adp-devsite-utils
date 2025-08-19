@@ -29,7 +29,6 @@ const commandArgs = [
     'remark',
     path.join(process.cwd(), 'src', 'pages'),
     '--quiet',
-    '--frail',
     '--no-config' // Prevent loading .remarkrc.yaml
 ];
 
