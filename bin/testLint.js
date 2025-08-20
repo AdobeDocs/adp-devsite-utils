@@ -27,7 +27,7 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 // Create remark processor with all plugins
 const processor = remark()
   .use(remarkLintNoMultipleToplevelHeadings)
-  .use(remarkLintCheckFrontmatter, ['error'])
+  .use(remarkLintCheckFrontmatter.default, ['error'])
   .use(remarkLintNoAngleBrackets.default)
   .use(remarkLintSelfCloseComponent.default);
 
