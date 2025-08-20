@@ -9,6 +9,7 @@ const remarkLintNoAngleBrackets = (severity = 'warning') => {
     // Visit all nodes to find angle bracket links
     visit(tree, (node) => {
       // Only detect raw text nodes containing angle bracket URLs
+      console.log("check angel bracket node.type " + ${node.type});
       if (node.type === 'text') {
         const text = node.value
 
