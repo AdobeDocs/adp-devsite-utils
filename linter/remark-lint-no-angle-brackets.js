@@ -6,16 +6,22 @@ const remarkLintNoAngleBrackets = (severity = 'warn') => {
     visit(tree, 'text', (node) => {
       const text = node.value
 
+      // Debug: log what we're seeing
+      console.log('Checking text node:', text)
+
       // Look for content inside angle brackets that matches link patterns
       const angleBracketRegex = /<([^>]+)>/g
       let match
 
       while ((match = angleBracketRegex.exec(text)) !== null) {
-        const content = match[1];
-        console.log('content');
+        const content = match[1]
+        console.log('Found angle bracket content:', content)
+
         // Check if the content matches a link pattern
         const linkPattern = /^(https?:\/\/|www\.|mailto:)/
         if (linkPattern.test(content)) {
+          console.log('Content matches link pattern:', content)
+
           const startColumn = node.position.start.column + match.index
           const endColumn = startColumn + match[0].length
 
