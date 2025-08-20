@@ -4,6 +4,8 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
+const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
+
 // Get the directory where this script is located (adp-devsite-utils repo)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,25 +20,26 @@ const PLUGINS = [
     path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-check-frontmatter.js'),
     path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-no-angle-brackets.js'),
     path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-self-close-component.js')
-    // 'remark-lint-no-dead-links',
-    // 'remark-lint-no-empty-url'
 ];
 
-console.log(`Running remark with ${PLUGINS.length} plugin(s): ${PLUGINS.join(', ')}...`);
+logSection('RUN LINT');
+logStep('Starting remark linting process');
+
+verbose(`Running remark with ${PLUGINS.length} plugin(s): ${PLUGINS.join(', ')}`);
 
 // Build the command array with all plugins
 const commandArgs = [
     'remark',
     path.join(process.cwd(), 'src', 'pages'),
-    '--quiet',
-    '--frail',
-    '--no-config' // Prevent loading .remarkrc.yaml
+    '--quiet'
 ];
 
 // Add each plugin with --use flag
 PLUGINS.forEach(plugin => {
     commandArgs.push('--use', plugin);
 });
+
+verbose(`Command: npx ${commandArgs.join(' ')}`);
 
 // Run remark with the specified plugins
 const remarkProcess = spawn('npx', commandArgs, {
@@ -46,14 +49,14 @@ const remarkProcess = spawn('npx', commandArgs, {
 
 remarkProcess.on('close', (code) => {
     if (code === 0) {
-        console.log('\n✅ All markdown files passed linting!');
+        log('✅ All markdown files passed linting!', 'success');
     } else {
-        console.log('\n❌ Linting completed with issues');
+        log('❌ Linting completed with issues', 'warn');
         process.exit(1);
     }
 });
 
 remarkProcess.on('error', (error) => {
-    console.error('Error running remark:', error);
+    log(`Failed to start remark: ${error.message}`, 'error');
     process.exit(1);
 });

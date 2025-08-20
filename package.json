@@ -9,8 +9,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "list": "node index.js",
-    "lint:fast": "remark src/pages --quiet --frail"
+    "list": "node index.js"
   },
   "author": "",
   "license": "Apache-2.0",
