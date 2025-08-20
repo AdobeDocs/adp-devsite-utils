@@ -11,8 +11,8 @@ const remarkLintNoAngleBrackets = (severity = 'warn') => {
       let match
 
       while ((match = angleBracketRegex.exec(text)) !== null) {
-        const content = match[1]
-
+        const content = match[1];
+        console.log('content');
         // Check if the content matches a link pattern
         const linkPattern = /^(https?:\/\/|www\.|mailto:)/
         if (linkPattern.test(content)) {
