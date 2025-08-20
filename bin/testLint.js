@@ -1,9 +1,9 @@
-import {remark} from 'remark'
-import remarkLintListItemIndent from 'remark-lint-list-item-indent'
-import remarkPresetLintConsistent from 'remark-preset-lint-consistent'
-import remarkPresetLintRecommended from 'remark-preset-lint-recommended'
+#!/usr/bin/env node
+
+import { remark } from 'remark';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'node:fs';
 
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 
@@ -12,14 +12,106 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const adpDevsiteUtilsDir = path.dirname(__dirname);
 
-const file = await remark()
-  // Check that markdown is consistent.
-  .use(remarkPresetLintConsistent)
-  // Few recommended rules.
-  .use(remarkPresetLintRecommended)
-  // `remark-lint-list-item-indent` is configured with `one` in the
-  // recommended preset, but if we’d prefer something else, it can be
-  // reconfigured:
-  .use(remarkLintListItemIndent, 'tab')
-  .process('1) Hello, _Jupiter_ and *Neptune*!')
+// Get the current working directory (target repo where the command is run)
+const targetDir = process.cwd();
 
+logSection('TEST LINT');
+logStep('Testing remark rules with JavaScript API');
+
+// Import the custom linter plugins
+const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-check-frontmatter.js'));
+const remarkLintNoAngleBrackets = await import(path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-no-angle-brackets.js'));
+const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-self-close-component.js'));
+
+// Create remark processor with all plugins
+const processor = remark()
+  .use(remarkLintCheckFrontmatter.default)
+  .use(remarkLintNoAngleBrackets.default)
+  .use(remarkLintSelfCloseComponent.default);
+
+// Find all markdown files in src/pages
+const srcPagesDir = path.join(targetDir, 'src', 'pages');
+
+if (!fs.existsSync(srcPagesDir)) {
+  log('❌ src/pages directory not found', 'error');
+  process.exit(1);
+}
+
+// Find all markdown files recursively
+function findMarkdownFiles(dir) {
+  const files = [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...findMarkdownFiles(fullPath));
+    } else if (entry.name.endsWith('.md')) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
+}
+
+const markdownFiles = findMarkdownFiles(srcPagesDir);
+
+if (markdownFiles.length === 0) {
+  log('No markdown files found in src/pages', 'warn');
+  process.exit(0);
+}
+
+log(`Found ${markdownFiles.length} markdown files to test`);
+
+// Process each file
+let totalIssues = 0;
+let filesWithIssues = 0;
+
+for (const filePath of markdownFiles) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const relativePath = path.relative(targetDir, filePath);
+
+    verbose(`Processing: ${relativePath}`);
+
+    // Process the file with remark
+    const result = await processor.process(content);
+
+    if (result.messages.length > 0) {
+      filesWithIssues++;
+      totalIssues += result.messages.length;
+
+      console.log(`\n${relativePath}:`);
+
+      // Display all messages for this file
+      result.messages.forEach(message => {
+        const position = message.position;
+        const line = position ? position.start.line : '?';
+        const column = position ? position.start.column : '?';
+
+        const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
+        console.log(`  ${line}:${column} ${severity} ${message.message}`);
+
+        if (message.ruleId) {
+          console.log(`    Rule: ${message.ruleId}`);
+        }
+      });
+    } else {
+      verbose(`✅ ${relativePath}: No issues found`);
+    }
+
+  } catch (error) {
+    log(`❌ Error processing ${filePath}: ${error.message}`, 'error');
+    totalIssues++;
+  }
+}
+
+// Summary
+if (totalIssues === 0) {
+  log('✅ All markdown files passed linting!', 'success');
+  process.exit(0);
+} else {
+  log(`❌ Found ${totalIssues} issues in ${filesWithIssues} files`, 'error');
+  process.exit(1);
+}
