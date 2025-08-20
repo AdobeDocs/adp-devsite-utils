@@ -15,6 +15,9 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
 
     if (!hasFrontmatter) {
       console.log(`❌ No frontmatter found, severity is: "${severity}"`)
+      console.log(`❌ severity === 'error' evaluates to: ${severity === 'error'}`)
+      console.log(`❌ severity type: ${typeof severity}`)
+      console.log(`❌ severity length: ${severity.length}`)
       if (severity === 'error') {
         console.log('🚨 Calling file.fail() for missing frontmatter')
         file.fail(
