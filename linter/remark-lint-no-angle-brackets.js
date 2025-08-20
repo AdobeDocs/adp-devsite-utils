@@ -7,7 +7,7 @@ const remarkLintNoAngleBrackets = (severity = 'warn') => {
       const text = node.value
 
       // Look for patterns like <http://...> or <https://...>
-      const angleBracketUrlRegex = /<((?:https?:\/\/|www\.)[^>]+)>/g
+      const angleBracketUrlRegex = /^(https?:\/\/|www\.|mailto:)/
       let match
       console.log("got in here to check for angle brackets " + text);
 
