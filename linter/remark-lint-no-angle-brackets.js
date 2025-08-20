@@ -9,7 +9,7 @@ const remarkLintNoAngleBrackets = (severity = 'warn') => {
       // Look for patterns like <http://...> or <https://...>
       const angleBracketUrlRegex = /<((?:https?:\/\/|www\.)[^>]+)>/g
       let match
-      console.log("got in here to check for angle brackets " + file.path);
+      console.log("got in here to check for angle brackets " + text);
 
       while ((match = angleBracketUrlRegex.exec(text)) !== null) {
         const url = match[1]
