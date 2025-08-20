@@ -26,8 +26,8 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 
 // Create remark processor with all plugins
 const processor = remark()
-  .use(remarkLintNoMultipleToplevelHeadings, ['error'])
-  .use(remarkLintCheckFrontmatter.default)
+  .use(remarkLintNoMultipleToplevelHeadings)
+  .use(remarkLintCheckFrontmatter, ['error'])
   .use(remarkLintNoAngleBrackets.default)
   .use(remarkLintSelfCloseComponent.default);
 
@@ -88,6 +88,7 @@ for (const filePath of markdownFiles) {
 
       // Display all messages for this file
       result.messages.forEach(message => {
+        console.log("message " + message);
         const position = message.position;
         const line = position ? position.start.line : '?';
         const column = position ? position.start.column : '?';
