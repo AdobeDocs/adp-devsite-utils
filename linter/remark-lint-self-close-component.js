@@ -92,16 +92,13 @@ const remarkLintSelfCloseComponent = (severity = 'warning') => {
               const match = content.match(new RegExp(`<(${component})(?:\\s+[^>]*)?>`, 'i'))
               const actualComponentName = match ? match[1] : component
 
-              console.log(`🚨 Found violation for component: ${actualComponentName} (look-ahead method)`);
               if (actualSeverity === 'error') {
-                console.log(`🚨 Calling file.fail() with severity: ${actualSeverity}`);
                 file.fail(
                   `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                   position,
                   'remark-lint:self-close-component'
                 )
               } else {
-                console.log(`⚠️  Calling file.message() with severity: ${actualSeverity}`);
                 file.message(
                   `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                   position,

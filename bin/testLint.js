@@ -30,7 +30,7 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 const processor = remark()
   .use(remarkValidateLinks)
   .use(remarkLintNoMultipleToplevelHeadings)
-  .use(remarkLintNoHiddenTableCell, ['error'])
+  .use(remarkLintNoHiddenTableCell)
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintSelfCloseComponent.default, ['error']);
