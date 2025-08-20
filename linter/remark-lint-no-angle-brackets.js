@@ -9,13 +9,18 @@ const remarkLintNoAngleBrackets = (severity = 'warning') => {
     // Visit all nodes to find angle bracket links
     visit(tree, (node) => {
       // Only detect raw text nodes containing angle bracket URLs
-              console.log(`check angel bracket node.type ${node.type}`);
+      console.log(`check angel bracket node.type ${node.type}`);
       if (node.type === 'text') {
         const text = node.value
-
+        console.log(`🔍 Text node content: "${text}"`)
+        
         // Look for patterns like <www.example.com> or <http://example.com>
         const angleBracketUrlRegex = /<((?:https?:\/\/)?(?:www\.)?[^\s<>]+)>/g
         let match
+        
+        // Test the regex on this text
+        const matches = text.match(angleBracketUrlRegex)
+        console.log(`🔍 Regex matches:`, matches)
 
         while ((match = angleBracketUrlRegex.exec(text)) !== null) {
           const url = match[1]
