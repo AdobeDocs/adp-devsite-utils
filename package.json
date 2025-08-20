@@ -23,14 +23,5 @@
     "remark-validate-links": "^13.1.0",
     "remark-gfm": "^4.0.1",
     "remark-lint-no-hidden-table-cell": "^1.0.1"
-  },
-  "remarkConfig": {
-    "plugins": [
-      "remark-lint",
-      [
-        "remark-lint-no-multiple-toplevel-headings",
-        "error"
-      ]
-    ]
   }
 }
