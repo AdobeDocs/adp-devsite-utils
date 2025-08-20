@@ -17,7 +17,7 @@ const PLUGINS = [
     'remark-lint-no-multiple-toplevel-headings',
     'remark-validate-links',
     'remark-gfm',
-    'remark-lint-no-hidden-table-cell:error',
+    'remark-lint-no-hidden-table-cell',
     path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-check-frontmatter.js'),
     path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-no-angle-brackets.js'),
     path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-self-close-component.js')
