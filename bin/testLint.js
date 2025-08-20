@@ -26,9 +26,9 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 
 // Create remark processor with all plugins
 const processor = remark()
-  .use(remarkLintNoMultipleToplevelHeadings)
-  .use(remarkLintCheckFrontmatter.default, ['error'])
-  .use(remarkLintNoAngleBrackets.default)
+  .use(remarkLintNoMultipleToplevelHeadings, 'error')
+  .use(remarkLintCheckFrontmatter.default)
+  .use(remarkLintNoAngleBrackets.default, 'error')
   .use(remarkLintSelfCloseComponent.default);
 
 // Find all markdown files in src/pages
