@@ -71,20 +71,16 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
 
         if (severity === 'error') {
           file.fail(
-            Missing or empty title in frontmatter',
-          position,
+            'Missing or empty title in frontmatter',
+            position,
             'remark-lint:check-frontmatter'
           )
         } else {
           file.message(
-            Missing
-          or
-          empty
-          title in frontmatter
-          ',
-          position,
+            'Missing or empty title in frontmatter',
+            position,
             'remark-lint:check-frontmatter'
-        )
+          )
         }
       } else {
         console.log(`  ✅ Found title: "${title}"`)
