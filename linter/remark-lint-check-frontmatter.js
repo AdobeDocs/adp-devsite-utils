@@ -19,6 +19,7 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           {line: 1, column: 1},
           'remark-lint:check-frontmatter'
         )
+        return
       } else {
         file.message(
           'Missing frontmatter section - add --- at the beginning with title and description',
@@ -107,11 +108,19 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           }
         }
 
-        file.message(
-          'Missing or empty description in frontmatter',
-          position,
-          'remark-lint:check-frontmatter'
-        )
+        if (severity === 'error') {
+          file.fail(
+            'Missing or empty description in frontmatter',
+            position,
+            'remark-lint:check-frontmatter'
+          )
+        } else {
+          file.message(
+            'Missing or empty description in frontmatter',
+            position,
+            'remark-lint:check-frontmatter'
+          )
+        }
       } else {
         console.log(`  ✅ Found description: "${description}"`)
       }
@@ -129,11 +138,19 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           }
         }
 
-        file.message(
-          `Title is too long (${title.length} characters). Consider keeping it under 60 characters.`,
-          position,
-          'remark-lint:check-frontmatter'
-        )
+        if (severity === 'error') {
+          file.fail(
+            `Title is too long (${title.length} characters). Consider keeping it under 60 characters.`,
+            position,
+            'remark-lint:check-frontmatter'
+          )
+        } else {
+          file.message(
+            `Title is too long (${title.length} characters). Consider keeping it under 60 characters.`,
+            position,
+            'remark-lint:check-frontmatter'
+          )
+        }
       }
 
       // Additional validation: check description length
@@ -149,11 +166,19 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           }
         }
 
-        file.message(
-          `Description is too long (${description.length} characters). Consider keeping it under 160 characters.`,
-          position,
-          'remark-lint:check-frontmatter'
-        )
+        if (severity === 'error') {
+          file.fail(
+            `Description is too long (${description.length} characters). Consider keeping it under 160 characters.`,
+            position,
+            'remark-lint:check-frontmatter'
+          )
+        } else {
+          file.message(
+            `Description is too long (${description.length} characters). Consider keeping it under 160 characters.`,
+            position,
+            'remark-lint:check-frontmatter'
+          )
+        }
       }
 
     } catch (error) {
