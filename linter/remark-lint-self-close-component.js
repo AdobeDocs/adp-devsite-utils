@@ -2,13 +2,9 @@ import { visit } from 'unist-util-visit'
 
 const remarkLintSelfCloseComponent = (severity = 'warning') => {
   return (tree, file) => {
-    console.log(`🔍 Self-close component rule called with severity: "${severity}"`);
-    
     // Handle both array format [severity] and direct severity string
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
     
-    console.log(`🔍 actualSeverity: "${actualSeverity}"`);
-    console.log("check remark self close component ");
     // Custom components that must be self-closing
     const customComponents = [
       'herosimple', 'resources', 'inlinealert', 'getcredential',
