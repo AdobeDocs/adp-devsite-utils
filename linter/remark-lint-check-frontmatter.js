@@ -4,7 +4,6 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
   return (tree, file) => {
     // Handle both array format [severity] and direct severity string
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
-    console.log(`🔍 Frontmatter linter called with severity: "${actualSeverity}"`)
 
     let hasFrontmatter = false
     let frontmatterNode = null
@@ -16,11 +15,7 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
     })
 
     if (!hasFrontmatter) {
-      console.log(`❌ No frontmatter found, severity is: "${actualSeverity}"`)
-      console.log(`❌ actualSeverity === 'error' evaluates to: ${actualSeverity === 'error'}`)
-      console.log(`❌ actualSeverity type: ${typeof actualSeverity}`)
       if (actualSeverity === 'error') {
-        console.log('🚨 Calling file.fail() for missing frontmatter')
         file.fail(
           'Missing frontmatter section - add --- at the beginning with title and description',
           {line: 1, column: 1},
@@ -28,7 +23,6 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
         )
         return
       } else {
-        console.log('⚠️  Calling file.message() for missing frontmatter')
         file.message(
           'Missing frontmatter section - add --- at the beginning with title and description',
           {line: 1, column: 1},
@@ -86,7 +80,7 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           }
         }
 
-        if (severity === 'error') {
+        if (actualSeverity === 'error') {
           file.fail(
             'Missing or empty title in frontmatter',
             position,
@@ -116,7 +110,7 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           }
         }
 
-        if (severity === 'error') {
+        if (actualSeverity === 'error') {
           file.fail(
             'Missing or empty description in frontmatter',
             position,
@@ -146,7 +140,7 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           }
         }
 
-        if (severity === 'error') {
+        if (actualSeverity === 'error') {
           file.fail(
             `Title is too long (${title.length} characters). Consider keeping it under 60 characters.`,
             position,
@@ -174,7 +168,7 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           }
         }
 
-        if (severity === 'error') {
+        if (actualSeverity === 'error') {
           file.fail(
             `Description is too long (${description.length} characters). Consider keeping it under 160 characters.`,
             position,
