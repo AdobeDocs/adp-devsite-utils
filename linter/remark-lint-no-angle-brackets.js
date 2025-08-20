@@ -1,6 +1,6 @@
 import { visit } from 'unist-util-visit'
 
-const remarkLintNoAngleBrackets = () => {
+const remarkLintNoAngleBrackets = (severity = 'warning') => {
   return (tree, file) => {
     // Visit all nodes to find angle bracket links
     visit(tree, (node) => {
@@ -23,11 +23,17 @@ const remarkLintNoAngleBrackets = () => {
               }
             }
 
-            file.message(
-              `Use [link text](${url}) instead of <${url}> for better accessibility`,
-              position,
-              'remark-lint:no-angle-brackets'
-            )
+            if (severity === 'error') {
+              file.fail(
+                `Use [link text](${url}) instead of <${url}> for better accessibility`,
+                position
+              )
+            } else {
+              file.message(
+                `Use [link text](${url}) instead of <${url}> for better accessibility`,
+                position,
+                'remark-lint:no-angle-brackets')
+            }
           }
         }
       }

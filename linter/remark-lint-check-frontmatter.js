@@ -1,8 +1,8 @@
 import { visit } from 'unist-util-visit'
 
-const remarkLintCheckFrontmatter = () => {
+const remarkLintCheckFrontmatter = (severity = 'warning') => {
   return (tree, file) => {
-    
+
     let hasFrontmatter = false
     let frontmatterNode = null
 
@@ -69,11 +69,23 @@ const remarkLintCheckFrontmatter = () => {
           }
         }
 
-        file.message(
-          'Missing or empty title in frontmatter',
+        if (severity === 'error') {
+          file.fail(
+            Missing or empty title in frontmatter',
           position,
-          'remark-lint:check-frontmatter'
+            'remark-lint:check-frontmatter'
+          )
+        } else {
+          file.message(
+            Missing
+          or
+          empty
+          title in frontmatter
+          ',
+          position,
+            'remark-lint:check-frontmatter'
         )
+        }
       } else {
         console.log(`  ✅ Found title: "${title}"`)
       }
