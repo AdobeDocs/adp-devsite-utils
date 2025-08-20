@@ -1,7 +1,10 @@
 import { visit } from 'unist-util-visit'
 
-const remarkLintSelfCloseComponent = () => {
+const remarkLintSelfCloseComponent = (severity = 'warning') => {
   return (tree, file) => {
+    // Handle both array format [severity] and direct severity string
+    const actualSeverity = Array.isArray(severity) ? severity[0] : severity
+    
     // Custom components that must be self-closing
     const customComponents = [
       'herosimple', 'resources', 'inlinealert', 'getcredential', 
@@ -45,11 +48,19 @@ const remarkLintSelfCloseComponent = () => {
             const match = content.match(new RegExp(`<(${component})(?:\\s+[^>]*)?>`, 'i'))
             const actualComponentName = match ? match[1] : component
             
-            file.message(
-              `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
-              position,
-              'remark-lint:self-close-component'
-            )
+            if (actualSeverity === 'error') {
+              file.fail(
+                `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
+                position,
+                'remark-lint:self-close-component'
+              )
+            } else {
+              file.message(
+                `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
+                position,
+                'remark-lint:self-close-component'
+              )
+            }
           } else {
             // Look ahead in the tree to see if there's a corresponding closing tag
             let hasClosingTag = false
@@ -81,11 +92,19 @@ const remarkLintSelfCloseComponent = () => {
               const match = content.match(new RegExp(`<(${component})(?:\\s+[^>]*)?>`, 'i'))
               const actualComponentName = match ? match[1] : component
               
-              file.message(
-                `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
-                position,
-                'remark-lint:self-close-component'
-              )
+              if (actualSeverity === 'error') {
+                file.fail(
+                  `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
+                  position,
+                  'remark-lint:self-close-component'
+                )
+              } else {
+                file.message(
+                  `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
+                  position,
+                  'remark-lint:self-close-component'
+                )
+              }
             }
           }
         }
