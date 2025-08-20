@@ -2,6 +2,8 @@
 
 import { remark } from 'remark';
 import remarkLintNoMultipleToplevelHeadings from 'remark-lint-no-multiple-toplevel-headings';
+import remarkValidateLinks from 'remark-validate-links';
+import remarkLintNoHiddenTableCell from 'remark-lint-no-hidden-table-cell';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'node:fs';
@@ -26,9 +28,11 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 
 // Create remark processor with all plugins
 const processor = remark()
-  .use(remarkLintNoMultipleToplevelHeadings, ['error'])
-  .use(remarkLintNoAngleBrackets.default)
-  .use(remarkLintCheckFrontmatter.default)
+  .use(remarkValidateLinks)
+  .use(remarkLintNoMultipleToplevelHeadings)
+  .use(remarkLintNoHiddenTableCell, ['error'])
+  .use(remarkLintNoAngleBrackets.default, ['error'])
+  .use(remarkLintCheckFrontmatter.default, ['error'])
   .use(remarkLintSelfCloseComponent.default, ['error']);
 
 // Find all markdown files in src/pages
