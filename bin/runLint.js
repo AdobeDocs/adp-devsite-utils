@@ -10,6 +10,7 @@ const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const adpDevsiteUtilsDir = path.dirname(__dirname);
+const noanglebracketDir = path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-no-angle-brackets.js');
 
 // Array of plugins to use - easily add/remove plugins here
 const PLUGINS = [
@@ -18,7 +19,7 @@ const PLUGINS = [
     'remark-gfm',
     'remark-lint-no-hidden-table-cell',
     path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-check-frontmatter.js'),
-    path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-no-angle-brackets.js'),
+    [noanglebracketDir, 'error']
     path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-self-close-component.js')
 ];
 
