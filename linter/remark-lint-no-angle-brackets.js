@@ -26,9 +26,10 @@ const remarkLintNoAngleBrackets = () => {
           }
         }
 
-        file.message(
-          `Use [link text](${url}) instead of <${url}> for better accessibility`,
+        // This plugin returns errors (will fail the build)
+        file.fail(
           position,
+          `Use [link text](${url}) instead of <${url}> for better accessibility`,
           'remark-lint:no-angle-brackets'
         )
       }
