@@ -2,61 +2,54 @@ import { visit } from 'unist-util-visit'
 
 const remarkLintNoAngleBrackets = (severity = 'warning') => {
   return (tree, file) => {
-    console.log("check angel bracket");
     // Handle both array format [severity] and direct severity string
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
 
-    // Visit all nodes to find angle bracket links
-    visit(tree, (node) => {
-      // Only detect raw text nodes containing angle bracket URLs
-      console.log(`check angel bracket node.type ${node.type}`);
-      if (node.type === 'text') {
-        const text = node.value
-        console.log(`🔍 Text node content: "${text}"`)
-        
-        // Look for patterns like <www.example.com> or <http://example.com>
-        const angleBracketUrlRegex = /<((?:https?:\/\/)?(?:www\.)?[^\s<>]+)>/g
-        let match
-        
-        // Test the regex on this text
-        const matches = text.match(angleBracketUrlRegex)
-        console.log(`🔍 Regex matches:`, matches)
+    // Simple line-by-line scanning approach (more reliable than AST parsing)
+    const content = file.toString()
+    const lines = content.split('\n')
+    
+    for (let lineNumber = 1; lineNumber <= lines.length; lineNumber++) {
+      const line = lines[lineNumber - 1]
+      const trimmedLine = line.trim()
 
-        while ((match = angleBracketUrlRegex.exec(text)) !== null) {
-          const url = match[1]
-          const fullMatch = match[0]
+      // Check for links enclosed with <> instead of []
+      const angleBracketLinks = trimmedLine.match(/<([^>]+)>/g)
+      if (angleBracketLinks) {
+        for (const link of angleBracketLinks) {
+          // Extract the content inside the brackets
+          const content = link.replace(/^<|>$/g, '')
 
-          // Calculate position for the specific match within the text node
-          const startColumn = node.position.start.column + match.index
-          const endColumn = startColumn + fullMatch.length
-
-          const position = {
-            start: {
-              line: node.position.start.line,
-              column: startColumn
-            },
-            end: {
-              line: node.position.start.line,
-              column: endColumn
+          // Check if it's a URL (starts with http, https, www, or mailto)
+          if (content.match(/^(https?:\/\/|www\.|mailto:)/)) {
+            const position = {
+              start: {
+                line: lineNumber,
+                column: line.indexOf(link) + 1
+              },
+              end: {
+                line: lineNumber,
+                column: line.indexOf(link) + link.length
+              }
             }
-          }
 
-          if (actualSeverity === 'error') {
-            file.fail(
-              `Use [link text](${url}) instead of <${url}> for better accessibility`,
-              position,
-              'remark-lint:no-angle-brackets'
-            )
-          } else {
-            file.message(
-              `Use [link text](${url}) instead of <${url}> for better accessibility`,
-              position,
-              'remark-lint:no-angle-brackets'
-            )
+            if (actualSeverity === 'error') {
+              file.fail(
+                `Link "${link}" uses angle brackets <>. Consider using square brackets [] instead for better markdown compatibility.`,
+                position,
+                'remark-lint:no-angle-brackets'
+              )
+            } else {
+              file.message(
+                `Link "${link}" uses angle brackets <>. Consider using square brackets [] instead for better markdown compatibility.`,
+                position,
+                'remark-lint:no-angle-brackets'
+              )
+            }
           }
         }
       }
-    })
+    }
   }
 }
 
