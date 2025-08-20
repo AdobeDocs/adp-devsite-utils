@@ -1,6 +1,6 @@
 import { visit } from 'unist-util-visit'
 
-const remarkLintNoAngleBrackets = (severity = 'warning') => {
+const  = (severity = 'warning') => {
   return (tree, file) => {
     console.log("check angel bracket");
     // Handle both array format [severity] and direct severity string

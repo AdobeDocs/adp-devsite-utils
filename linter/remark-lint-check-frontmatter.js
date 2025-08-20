@@ -21,14 +21,14 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
           {line: 1, column: 1},
           'remark-lint:check-frontmatter'
         )
-        return
+        return;
       } else {
         file.message(
           'Missing frontmatter section - add --- at the beginning with title and description',
           {line: 1, column: 1},
           'remark-lint:check-frontmatter'
         )
-        return
+        return;
       }
     }
 
