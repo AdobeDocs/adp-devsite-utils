@@ -2,7 +2,9 @@ import { visit } from 'unist-util-visit'
 
 const remarkLintCheckFrontmatter = (severity = 'warning') => {
   return (tree, file) => {
-    console.log(`🔍 Frontmatter linter called with severity: "${severity}"`)
+    // Handle both array format [severity] and direct severity string
+    const actualSeverity = Array.isArray(severity) ? severity[0] : severity
+    console.log(`🔍 Frontmatter linter called with severity: "${actualSeverity}"`)
 
     let hasFrontmatter = false
     let frontmatterNode = null
@@ -14,11 +16,10 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
     })
 
     if (!hasFrontmatter) {
-      console.log(`❌ No frontmatter found, severity is: "${severity}"`)
-      console.log(`❌ severity === 'error' evaluates to: ${severity === 'error'}`)
-      console.log(`❌ severity type: ${typeof severity}`)
-      console.log(`❌ severity length: ${severity.length}`)
-      if (severity === 'error') {
+      console.log(`❌ No frontmatter found, severity is: "${actualSeverity}"`)
+      console.log(`❌ actualSeverity === 'error' evaluates to: ${actualSeverity === 'error'}`)
+      console.log(`❌ actualSeverity type: ${typeof actualSeverity}`)
+      if (actualSeverity === 'error') {
         console.log('🚨 Calling file.fail() for missing frontmatter')
         file.fail(
           'Missing frontmatter section - add --- at the beginning with title and description',
