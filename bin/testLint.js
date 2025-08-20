@@ -29,7 +29,7 @@ const processor = remark()
   .use(remarkLintNoMultipleToplevelHeadings, ['error'])
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
-  .use(remarkLintSelfCloseComponent.default);
+  .use(remarkLintSelfCloseComponent.default, ['error']);
 
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
