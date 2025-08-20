@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { remark } from 'remark';
-import remark-lint-no-multiple-toplevel-headings from 'remark-lint-no-multiple-toplevel-headings';
+import remarkLintNoMultipleToplevelHeadings from 'remark-lint-no-multiple-toplevel-headings';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'node:fs';
@@ -26,7 +26,7 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 
 // Create remark processor with all plugins
 const processor = remark()
-  .use(remark-lint-no-multiple-toplevel-headings, ['error'])
+  .use(remarkLintNoMultipleToplevelHeadings, ['error'])
   .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintNoAngleBrackets.default)
   .use(remarkLintSelfCloseComponent.default);
