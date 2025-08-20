@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { remark } from 'remark';
+import remark-lint-no-multiple-toplevel-headings from 'remark-lint-no-multiple-toplevel-headings';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'node:fs';
@@ -25,6 +26,7 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 
 // Create remark processor with all plugins
 const processor = remark()
+  .use(remark-lint-no-multiple-toplevel-headings, ['error'])
   .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintNoAngleBrackets.default)
   .use(remarkLintSelfCloseComponent.default);
@@ -105,13 +107,4 @@ for (const filePath of markdownFiles) {
     log(`❌ Error processing ${filePath}: ${error.message}`, 'error');
     totalIssues++;
   }
-}
-
-// Summary
-if (totalIssues === 0) {
-  log('✅ All markdown files passed linting!', 'success');
-  process.exit(0);
-} else {
-  log(`❌ Found ${totalIssues} issues in ${filesWithIssues} files`, 'error');
-  process.exit(1);
 }
