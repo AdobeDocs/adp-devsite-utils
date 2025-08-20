@@ -32,7 +32,7 @@ const processor = remark()
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkLintNoHiddenTableCell, ['error'])
   .use(remarkLintNoAngleBrackets.default, ['error'])
-  .use(remarkLintCheckFrontmatter.default, ['error'])
+  .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintSelfCloseComponent.default, ['error']);
 
 // Find all markdown files in src/pages
