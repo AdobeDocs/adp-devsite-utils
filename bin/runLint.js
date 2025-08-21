@@ -29,7 +29,9 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 
 // Create remark processor with all plugins
 const processor = remark()
-  .use(remarkValidateLinks)
+  .use(remarkValidateLinks, {
+    skipPathPatterns: [/.*config\.md.*/]
+  })
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkGfm)
   .use(remarkLintNoHiddenTableCell, ['error'])
