@@ -32,7 +32,7 @@ const processor = remark()
   .use(remarkValidateLinks)
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkGfm)
-  .use(remarkLintNoHiddenTableCell)
+  .use(remarkLintNoHiddenTableCell, ['error'])
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintSelfCloseComponent.default, ['error']);
