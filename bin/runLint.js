@@ -95,7 +95,7 @@ for (const filePath of markdownFiles) {
         if (result.messages.length > 0) {
             filesWithIssues++;
             totalIssues += result.messages.length;
-            const errorexit = false;
+            let errorexit = false;
             verbose(`\n${relativePath}:`);
 
             // Display all messages for this file
