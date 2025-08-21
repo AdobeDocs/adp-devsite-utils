@@ -94,16 +94,11 @@ for (const filePath of markdownFiles) {
 
       // Display all messages for this file
       result.messages.forEach(message => {
-        console.log("message " + message);
-        const position = message.position;
-        const line = position ? position.start.line : '?';
-        const column = position ? position.start.column : '?';
-
         const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
-        console.log(`  ${line}:${column} ${severity} ${message.message}`);
+        verbose(` ${severity} ${message}`);
 
         if (message.ruleId) {
-          console.log(`    Rule: ${message.ruleId}`);
+          verbose(`    Rule: ${message.ruleId}`);
         }
       });
     } else {
