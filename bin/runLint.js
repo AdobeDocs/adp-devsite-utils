@@ -95,21 +95,23 @@ for (const filePath of markdownFiles) {
         if (result.messages.length > 0) {
             filesWithIssues++;
             totalIssues += result.messages.length;
-
+            const errorexit = false;
             verbose(`\n${relativePath}:`);
 
             // Display all messages for this file
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
                 verbose(` ${severity} ${message}`);
-
+                if (message.fatal) {
+                    errorexit = true;
+                }
                 if (message.ruleId) {
                     verbose(`    Rule: ${message.ruleId}`);
                 }
             });
-            if (message.fatal){
-                process.exit(1);
-            }
+           if (errorexit){
+               process.exit(1);
+           }
         } else {
             verbose(`✅ ${relativePath}: No issues found`);
         }
