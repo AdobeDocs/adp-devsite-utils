@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { remark } from 'remark';
+import remarkGfm from 'remark-gfm';
 import remarkLintNoMultipleToplevelHeadings from 'remark-lint-no-multiple-toplevel-headings';
 import remarkValidateLinks from 'remark-validate-links';
 import remarkLintNoHiddenTableCell from 'remark-lint-no-hidden-table-cell';
@@ -30,6 +31,7 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 const processor = remark()
   .use(remarkValidateLinks)
   .use(remarkLintNoMultipleToplevelHeadings)
+  .use(remarkGfm)
   .use(remarkLintNoHiddenTableCell)
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
