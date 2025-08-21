@@ -23,9 +23,9 @@ logSection('TEST LINT');
 logStep('Testing remark rules with JavaScript API');
 
 // Import the custom linter plugins
-const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-check-frontmatter.js'));
-const remarkLintNoAngleBrackets = await import(path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-no-angle-brackets.js'));
-const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 'linter', 'remark-lint-self-close-component.js'));
+const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-check-frontmatter.js'));
+const remarkLintNoAngleBrackets = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-angle-brackets.js'));
+const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-self-close-component.js'));
 
 // Create remark processor with all plugins
 const processor = remark()
@@ -107,6 +107,9 @@ for (const filePath of markdownFiles) {
                     verbose(`    Rule: ${message.ruleId}`);
                 }
             });
+            if (message.fatal){
+                process.exit(1);
+            }
         } else {
             verbose(`✅ ${relativePath}: No issues found`);
         }
