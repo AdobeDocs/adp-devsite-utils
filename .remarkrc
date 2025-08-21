@@ -1,0 +1,12 @@
+{
+  "plugins": [
+    [
+      "remark-validate-links",
+      {
+        "skipPathPatterns": [
+          "src/pages/config.md"
+        ]
+      }
+    ]
+  ]
+}
