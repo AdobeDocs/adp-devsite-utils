@@ -29,7 +29,10 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 
 // Create remark processor with all plugins
 const processor = remark()
-  .use(remarkValidateLinks, {skipPathPatterns: ['config.md', 'src/pages/config.md', /.*config\.md.*/]})
+  .use(remarkValidateLinks, {
+    skipPathPatterns: ['config.md', 'src/pages/config.md', /.*config\.md.*/],
+    root: targetDir
+  })
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkGfm)
   .use(remarkLintNoHiddenTableCell, ['error'])
@@ -56,7 +59,10 @@ function findMarkdownFiles(dir) {
         if (entry.isDirectory()) {
             files.push(...findMarkdownFiles(fullPath));
         } else if (entry.name.endsWith('.md')) {
-            files.push(fullPath);
+            // Skip config.md files
+            if (entry.name !== 'config.md') {
+                files.push(fullPath);
+            }
         }
     }
 
