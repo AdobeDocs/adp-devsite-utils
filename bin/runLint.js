@@ -81,6 +81,7 @@ log(`Found ${markdownFiles.length} markdown files to test`);
 // Process each file
 let totalIssues = 0;
 let filesWithIssues = 0;
+let hasFatalErrors = false;
 
 for (const filePath of markdownFiles) {
     try {
@@ -95,23 +96,21 @@ for (const filePath of markdownFiles) {
         if (result.messages.length > 0) {
             filesWithIssues++;
             totalIssues += result.messages.length;
-            let errorexit = false;
             verbose(`\n${relativePath}:`);
 
             // Display all messages for this file
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
                 verbose(` ${severity} ${message}`);
+                
                 if (message.fatal) {
-                    errorexit = true;
+                    hasFatalErrors = true;
                 }
+                
                 if (message.ruleId) {
                     verbose(`    Rule: ${message.ruleId}`);
                 }
             });
-           if (errorexit){
-               process.exit(1);
-           }
         } else {
             verbose(`✅ ${relativePath}: No issues found`);
         }
@@ -119,5 +118,23 @@ for (const filePath of markdownFiles) {
     } catch (error) {
         log(`❌ Error processing ${filePath}: ${error.message}`, 'error');
         totalIssues++;
+        hasFatalErrors = true;
     }
+}
+
+// Summary and exit
+log(`\n📊 Linting Summary:`);
+log(`   Files processed: ${markdownFiles.length}`);
+log(`   Files with issues: ${filesWithIssues}`);
+log(`   Total issues: ${totalIssues}`);
+
+if (hasFatalErrors) {
+    log('❌ Fatal errors found. Exiting with code 1.', 'error');
+    process.exit(1);
+} else if (totalIssues > 0) {
+    log('⚠️  Warnings found but no fatal errors.', 'warn');
+    process.exit(0);
+} else {
+    log('✅ All files passed linting successfully!', 'success');
+    process.exit(0);
 }
