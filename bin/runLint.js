@@ -35,7 +35,15 @@ const processor = remark()
     skipPathPatterns: [/.*config\.md.*/],
     root: srcPagesDir
   })
-  .use(remarkLintNoDeadUrls)
+  .use(remarkLintNoDeadUrls, {
+      deadOrAliveOptions: {
+          maxRetries: 0, // Disable retries
+          sleep: 0, // Disable sleep
+          timeout: {
+              request: 10000, // Set a 10-second timeout
+          },
+      },
+  })
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkGfm)
   .use(remarkLintNoHiddenTableCell, ['error'])
