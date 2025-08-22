@@ -26,12 +26,13 @@ logStep('Testing remark rules with JavaScript API');
 const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-check-frontmatter.js'));
 const remarkLintNoAngleBrackets = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-angle-brackets.js'));
 const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-self-close-component.js'));
-
+// Find all markdown files in src/pages
+const srcPagesDir = path.join(targetDir, 'src', 'pages');
 // Create remark processor with all plugins
 const processor = remark()
   .use(remarkValidateLinks, {
     skipPathPatterns: [/.*config\.md.*/],
-    root: targetDir
+    root: srcPagesDir
   })
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkGfm)
@@ -39,9 +40,6 @@ const processor = remark()
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintSelfCloseComponent.default, ['error']);
-
-// Find all markdown files in src/pages
-const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
 if (!fs.existsSync(srcPagesDir)) {
     log('❌ src/pages directory not found', 'error');
@@ -102,11 +100,11 @@ for (const filePath of markdownFiles) {
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
                 verbose(` ${severity} ${message}`);
-                
+
                 if (message.fatal) {
                     hasFatalErrors = true;
                 }
-                
+
                 if (message.ruleId) {
                     verbose(`    Rule: ${message.ruleId}`);
                 }
