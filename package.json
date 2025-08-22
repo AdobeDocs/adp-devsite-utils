@@ -22,6 +22,7 @@
     "remark-lint-no-multiple-toplevel-headings": "^4.0.1",
     "remark-validate-links": "^13.1.0",
     "remark-lint-no-dead-urls":"^2.0.1",
+    "remark-lint-no-html": "^4.0.1",
     "remark-gfm": "^4.0.1",
     "remark-lint-no-hidden-table-cell": "^1.0.1"
   }

@@ -6,6 +6,7 @@ import remarkLintNoMultipleToplevelHeadings from 'remark-lint-no-multiple-toplev
 import remarkValidateLinks from 'remark-validate-links';
 import remarkLintNoHiddenTableCell from 'remark-lint-no-hidden-table-cell';
 import remarkLintNoDeadUrls from 'remark-lint-no-dead-urls';
+import remarkLintNoHtml from 'remark-lint-no-html';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'node:fs';
@@ -43,6 +44,9 @@ const processor = remark()
               request: 10000, // Set a 10-second timeout
           },
       },
+  })
+  .use(remarkLintNoHtml, {
+      allow: ["Hero"]
   })
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkGfm)
