@@ -13,11 +13,50 @@ const remarkLintSelfCloseComponent = (severity = 'warning') => {
       'list', 'horizontalline', 'tab', 'columns', 'details'
     ]
 
-            // Visit all HTML nodes to find custom component tags
+    // Visit all HTML nodes to find custom component tags
     visit(tree, 'html', (node) => {
       const content = node.value
       
-      // Check for opening tags of custom components
+      // First, check for any HTML tags that aren't custom components
+      const htmlTagRegex = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)(?:\s+[^>]*)?(\/?)\s*>/g
+      let match
+      
+      while ((match = htmlTagRegex.exec(content)) !== null) {
+        const [fullTag, isClosing, tagName, isSelfClosing] = match
+        
+        // Skip if this tag is in the custom components list
+        if (customComponents.includes(tagName.toLowerCase())) {
+          continue
+        }
+        
+        // This is an unauthorized HTML tag - flag it
+        const position = {
+          start: {
+            line: node.position.start.line,
+            column: node.position.start.column + match.index + 1
+          },
+          end: {
+            line: node.position.start.line,
+            column: node.position.start.column + match.index + fullTag.length
+          }
+        }
+        
+        let message = `HTML tag <${tagName}> is not allowed. Only custom components are permitted.`
+        
+        if (isClosing) {
+          message = `HTML closing tag </${tagName}> is not allowed. Only custom components are permitted.`
+        } else if (isSelfClosing || fullTag.endsWith('/>')) {
+          message = `HTML self-closing tag <${tagName}/> is not allowed. Only custom components are permitted.`
+        }
+        
+        if (actualSeverity === 'error') {
+          file.fail(message, position, 'remark-lint:self-close-component')
+        } else {
+          file.message(message, position, 'remark-lint:self-close-component')
+        }
+      }
+      
+      // Now check for opening tags of custom components (existing logic)
       for (const component of customComponents) {
         // Case-insensitive regex for component names
         const openingTagRegex = new RegExp(`<${component}(?:\\s+[^>]*)?>`, 'gi')
