@@ -153,4 +153,4 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
   }
 }
 
-export default remarkLintSelfCloseComponent
+export default remarkLintHtmlCheck
