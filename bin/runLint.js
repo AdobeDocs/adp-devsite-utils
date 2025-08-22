@@ -37,7 +37,7 @@ const processor = remark()
   })
   .use(remarkLintNoDeadUrls, {
       deadOrAliveOptions: {
-          maxRetries: 0, // Disable retries
+          maxRetries: 1, // Disable retries
           sleep: 0, // Disable sleep
           timeout: {
               request: 10000, // Set a 10-second timeout
