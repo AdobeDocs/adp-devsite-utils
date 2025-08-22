@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import remarkLintNoMultipleToplevelHeadings from 'remark-lint-no-multiple-toplevel-headings';
 import remarkValidateLinks from 'remark-validate-links';
 import remarkLintNoHiddenTableCell from 'remark-lint-no-hidden-table-cell';
+import remarkLintNoDeadUrls from 'remark-lint-no-dead-urls';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'node:fs';
@@ -34,6 +35,7 @@ const processor = remark()
     skipPathPatterns: [/.*config\.md.*/],
     root: srcPagesDir
   })
+  .use(remarkLintNoDeadUrls)
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkGfm)
   .use(remarkLintNoHiddenTableCell, ['error'])
