@@ -109,7 +109,6 @@ for (const filePath of markdownFiles) {
             // Display all messages for this file
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
-                verbose(` ${message.position}`)
                 verbose(` ${severity} ${message}`);
 
                 if (message.fatal) {
@@ -125,6 +124,7 @@ for (const filePath of markdownFiles) {
         }
 
     } catch (error) {
+        log(`position: ${error.message.position}`);
         log(`❌ Error processing ${filePath}: ${error.message}`, 'error');
         totalIssues++;
         hasFatalErrors = true;
