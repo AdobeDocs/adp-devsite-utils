@@ -124,7 +124,7 @@ for (const filePath of markdownFiles) {
         }
 
     } catch (error) {
-        log(`position: ${error.message.position}`);
+        log(`position: ${error}`);
         log(`❌ Error processing ${filePath}: ${error.message}`, 'error');
         totalIssues++;
         hasFatalErrors = true;
