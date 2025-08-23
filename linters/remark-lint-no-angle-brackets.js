@@ -8,7 +8,7 @@ const remarkLintNoAngleBrackets = (severity = 'warning') => {
     // Simple line-by-line scanning approach (more reliable than AST parsing)
     const content = file.toString()
     const lines = content.split('\n')
-    
+
     for (let lineNumber = 1; lineNumber <= lines.length; lineNumber++) {
       const line = lines[lineNumber - 1]
       const trimmedLine = line.trim()
@@ -35,13 +35,13 @@ const remarkLintNoAngleBrackets = (severity = 'warning') => {
 
             if (actualSeverity === 'error') {
               file.fail(
-                `Link "${link}" uses angle brackets <>. Consider using square brackets [] instead for better markdown compatibility.`,
+                `Link "${link}" uses angle brackets <>. Please use square brackets [] instead. Example: <http://www.adobe.com> change to [Adobe](http://www.adobe.com) `,
                 position,
                 'remark-lint:no-angle-brackets'
               )
             } else {
               file.message(
-                `Link "${link}" uses angle brackets <>. Consider using square brackets [] instead for better markdown compatibility.`,
+                `Link "${link}" uses angle brackets <>. Please use square brackets [] instead.`,
                 position,
                 'remark-lint:no-angle-brackets'
               )
