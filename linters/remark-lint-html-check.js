@@ -92,13 +92,13 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
               file.fail(
                 `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                 position,
-                'remark-lint:self-close-component'
+                'remark-lint:html-check'
               )
             } else {
               file.message(
                 `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                 position,
-                'remark-lint:self-close-component'
+                'remark-lint:html-check'
               )
             }
           } else {
@@ -133,12 +133,14 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
               const actualComponentName = match ? match[1] : component
 
               if (actualSeverity === 'error') {
+                console.log("message position " + position);
                 file.fail(
                   `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                   position,
-                  'remark-lint:self-close-component'
+                  'remark-lint:html-check'
                 )
               } else {
+                console.log("message position " + position);
                 file.message(
                   `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                   position,
