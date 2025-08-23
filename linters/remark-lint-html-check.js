@@ -89,12 +89,14 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
             const actualComponentName = match ? match[1] : component
 
             if (actualSeverity === 'error') {
+              console.log("add message " + position);
               file.fail(
                 `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                 position,
                 'remark-lint:html-check'
               )
             } else {
+              console.log("add message " + position);
               file.message(
                 `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                 position,
