@@ -51,9 +51,9 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
         }
 
         if (actualSeverity === 'error') {
-          file.fail(message, position, 'remark-lint:self-close-component')
+          file.fail(message, position, 'remark-lint:html-check')
         } else {
-          file.message(message, position, 'remark-lint:self-close-component')
+          file.message(message, position, 'remark-lint:html-check')
         }
       }
 
@@ -90,7 +90,7 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
 
             if (actualSeverity === 'error') {
               console.log("add message " + position);
-              file.fail(
+              file.message(
                 `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                 position,
                 'remark-lint:html-check'
@@ -136,7 +136,7 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
 
               if (actualSeverity === 'error') {
                 console.log("message position " + position);
-                file.fail(
+                file.message(
                   `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                   position,
                   'remark-lint:html-check'
