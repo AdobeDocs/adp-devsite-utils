@@ -109,9 +109,7 @@ for (const filePath of markdownFiles) {
             // Display all messages for this file
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
-                if (message.fatal) {
-                    console.log("eror" + message.position);
-                }
+                verbose(` ${message.position}`)
                 verbose(` ${severity} ${message}`);
 
                 if (message.fatal) {
