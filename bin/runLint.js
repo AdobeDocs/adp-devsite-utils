@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import remarkLintNoMultipleToplevelHeadings from 'remark-lint-no-multiple-toplevel-headings';
 import remarkValidateLinks from 'remark-validate-links';
 import remarkLintNoHiddenTableCell from 'remark-lint-no-hidden-table-cell';
+import remarkLintNoDeadUrls from 'remark-lint-no-dead-urls';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'node:fs';
@@ -25,23 +26,30 @@ logStep('Testing remark rules with JavaScript API');
 // Import the custom linter plugins
 const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-check-frontmatter.js'));
 const remarkLintNoAngleBrackets = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-angle-brackets.js'));
-const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-self-close-component.js'));
-
+const remarkLintHtmlCheck = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-html-check.js'));
+// Find all markdown files in src/pages
+const srcPagesDir = path.join(targetDir, 'src', 'pages');
 // Create remark processor with all plugins
 const processor = remark()
   .use(remarkValidateLinks, {
     skipPathPatterns: [/.*config\.md.*/],
-    root: targetDir
+    root: srcPagesDir
+  })
+  .use(remarkLintNoDeadUrls, {
+      deadOrAliveOptions: {
+          maxRetries: 0, // Disable retries
+          sleep: 0, // Disable sleep
+          timeout: {
+              request: 10000, // Set a 10-second timeout
+          },
+      },
   })
   .use(remarkLintNoMultipleToplevelHeadings)
   .use(remarkGfm)
   .use(remarkLintNoHiddenTableCell, ['error'])
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
-  .use(remarkLintSelfCloseComponent.default, ['error']);
-
-// Find all markdown files in src/pages
-const srcPagesDir = path.join(targetDir, 'src', 'pages');
+  .use(remarkLintHtmlCheck.default, ['error']);
 
 if (!fs.existsSync(srcPagesDir)) {
     log('❌ src/pages directory not found', 'error');
@@ -102,11 +110,11 @@ for (const filePath of markdownFiles) {
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
                 verbose(` ${severity} ${message}`);
-                
+
                 if (message.fatal) {
                     hasFatalErrors = true;
                 }
-                
+
                 if (message.ruleId) {
                     verbose(`    Rule: ${message.ruleId}`);
                 }
@@ -116,7 +124,7 @@ for (const filePath of markdownFiles) {
         }
 
     } catch (error) {
-        log(`❌ Error processing ${filePath}: ${error.message}`, 'error');
+        log(`❌ Error processing ${filePath}: ${error}`, 'error');
         totalIssues++;
         hasFatalErrors = true;
     }
