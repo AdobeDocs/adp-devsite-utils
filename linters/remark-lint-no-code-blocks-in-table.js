@@ -34,82 +34,31 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
 
       // If we're in a table, check for code blocks
       if (inTable) {
-        // Check for fenced code blocks
+        // Check for fenced code blocks (``` or ~~~)
         if (trimmedLine.includes('```') || trimmedLine.includes('~~~')) {
           const position = {
             start: { line: lineNumber + 1, column: 1 },
             end: { line: lineNumber + 1, column: line.length }
           }
-
-          const message = 'Fenced code block detected in table. Consider moving the code block outside the table or using inline code with single backticks.'
-
+          
+          const message = 'Fenced code block detected in table. Consider moving the code block outside the table.'
+          
           if (actualSeverity === 'error') {
             file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
           } else {
             file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
           }
         }
-
-        // Check for JSON-like structures in table cells
-        const jsonPatterns = [
-          /\{\s*"[^"]*"\s*:\s*"[^"]*"/,  // {"key": "value"}
-          /\{\s*"[^"]*"\s*:\s*\{/,       // {"key": {
-          /^\s*"[^"]*"\s*:\s*"[^"]*"/,   // "key": "value"
-          /^\s*"[^"]*"\s*:\s*\d+/,       // "key": 123
-          /Model:/,                       // Model: keyword
-          /Example value:/                // Example value: keyword
-        ]
-
-        for (const pattern of jsonPatterns) {
-          if (pattern.test(line)) {
-            const match = line.match(pattern)
-            if (match) {
-              const position = {
-                start: { line: lineNumber + 1, column: match.index + 1 },
-                end: { line: lineNumber + 1, column: match.index + match[0].length }
-              }
-
-              const message = 'JSON-like content or API schema detected in table cell. Consider formatting as a proper code block outside the table.'
-
-              if (actualSeverity === 'error') {
-                file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
-              } else {
-                file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
-              }
-            }
-          }
-        }
-
-        // Check for indented content that looks like code
-        if (line.match(/^\s{4,}/)) {
+        
+        // Check for indented code blocks (4+ spaces at start of line within table)
+        if (line.match(/^\s{4,}/) && !line.match(/^\s*\|/)) {
           const position = {
             start: { line: lineNumber + 1, column: 1 },
             end: { line: lineNumber + 1, column: line.length }
           }
-
-          const message = 'Indented content detected in table cell. This may be interpreted as a code block. Consider using inline code or moving outside the table.'
-
-          if (actualSeverity === 'error') {
-            file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
-          } else {
-            file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
-          }
-        }
-
-        // Check for malformed table cells with code-like content
-        if (trimmedLine.includes('|') && (
-          trimmedLine.includes('{') ||
-          trimmedLine.includes('}') ||
-          trimmedLine.includes('Example value:') ||
-          trimmedLine.includes('Model:')
-        )) {
-          const position = {
-            start: { line: lineNumber + 1, column: 1 },
-            end: { line: lineNumber + 1, column: line.length }
-          }
-
-          const message = 'Code-like content detected in table cell. Consider restructuring to move code examples outside the table.'
-
+          
+          const message = 'Indented code block detected in table. Consider moving the code block outside the table.'
+          
           if (actualSeverity === 'error') {
             file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
           } else {
