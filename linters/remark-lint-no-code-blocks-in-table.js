@@ -25,13 +25,13 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
         }
       }
 
-      // Detect table end (empty line or non-table content)
-      if (inTable && (trimmedLine === '' || (!trimmedLine.includes('|') && !trimmedLine.match(/^[-:|\s]+$/)))) {
+      // Detect table end - only end on empty lines or clear section breaks
+      if (inTable && (trimmedLine === '' || trimmedLine.startsWith('#'))) {
         inTable = false
       }
 
       // If we're in a table, check for JSON-like content starting with {
-      if (inTable && trimmedLine.includes('{')) {
+      if (inTable && (trimmedLine.includes('{') || trimmedLine.includes('}'))) {
         // Remove content within backticks before checking for {
         const lineWithoutInlineCode = trimmedLine.replace(/`[^`]*`/g, '')
         
