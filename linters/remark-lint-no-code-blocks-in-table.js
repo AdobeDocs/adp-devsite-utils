@@ -31,7 +31,7 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
       }
 
       // If we're in a table, check for JSON-like content starting with {
-      if (inTable && trimmedLine.includes('|') && trimmedLine.includes('{')) {
+      if (inTable && trimmedLine.includes('{')) {
         // Remove content within backticks before checking for {
         const lineWithoutInlineCode = trimmedLine.replace(/`[^`]*`/g, '')
         
