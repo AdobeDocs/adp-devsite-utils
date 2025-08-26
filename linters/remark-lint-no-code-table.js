@@ -1,4 +1,4 @@
-mport { visit } from 'unist-util-visit'
+import { visit } from 'unist-util-visit'
 
 const remarkLintNoCodeTables = (severity = 'warning') => {
   return (tree, file) => {
