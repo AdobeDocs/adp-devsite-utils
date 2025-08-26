@@ -32,17 +32,23 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
 
       // If we're in a table, check for JSON-like content starting with {
       if (inTable && trimmedLine.includes('|') && trimmedLine.includes('{')) {
-        const position = {
-          start: { line: lineNumber + 1, column: 1 },
-          end: { line: lineNumber + 1, column: line.length }
-        }
+        // Remove content within backticks before checking for {
+        const lineWithoutInlineCode = trimmedLine.replace(/`[^`]*`/g, '')
         
-        const message = 'JSON-like content detected in table row. Consider moving code examples outside the table.'
-        
-        if (actualSeverity === 'error') {
-          file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
-        } else {
-          file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
+        // Only flag if { still exists after removing inline code
+        if (lineWithoutInlineCode.includes('{')) {
+          const position = {
+            start: { line: lineNumber + 1, column: 1 },
+            end: { line: lineNumber + 1, column: line.length }
+          }
+          
+          const message = 'JSON-like content detected in table row. Consider moving code examples outside the table.'
+          
+          if (actualSeverity === 'error') {
+            file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
+          } else {
+            file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
+          }
         }
       }
     }
