@@ -25,8 +25,11 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
         }
       }
 
-      // Detect table end - only end on empty lines or clear section breaks
-      if (inTable && (trimmedLine === '' || trimmedLine.startsWith('#'))) {
+      // Detect table end (empty line, fenced code block, or non-table content)
+      if (inTable && (trimmedLine === '' || 
+                trimmedLine.startsWith('```') || 
+                trimmedLine.startsWith('~~~') ||
+                (!trimmedLine.includes('|') && !trimmedLine.match(/^[-:|\s]+$/)))) {
         inTable = false
       }
 
