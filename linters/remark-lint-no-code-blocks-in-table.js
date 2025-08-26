@@ -32,9 +32,9 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
         inTable = false
       }
 
-      // If we're in a table, check for code blocks
+      // If we're in a table, check for problematic patterns
       if (inTable) {
-        // Check for fenced code blocks only
+        // Check for fenced code blocks
         if (trimmedLine.includes('```') || trimmedLine.includes('~~~')) {
           const position = {
             start: { line: lineNumber + 1, column: 1 },
@@ -42,6 +42,57 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
           }
           
           const message = 'Fenced code block detected in table. Consider moving the code block outside the table.'
+          
+          if (actualSeverity === 'error') {
+            file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
+          } else {
+            file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
+          }
+        }
+        
+        // Check for malformed table cells that contain obvious code patterns
+        if (trimmedLine.includes('|')) {
+          // Flag table cells that start with just a brace (malformed JSON)
+          if (/\|\s*\{\s*\|/.test(trimmedLine) || /\|\s*\{\s*$/.test(trimmedLine)) {
+            const position = {
+              start: { line: lineNumber + 1, column: 1 },
+              end: { line: lineNumber + 1, column: line.length }
+            }
+            
+            const message = 'JSON-like content detected in table cell. Consider moving code examples outside the table.'
+            
+            if (actualSeverity === 'error') {
+              file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
+            } else {
+              file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
+            }
+          }
+          
+          // Flag obvious API documentation patterns that should be outside tables
+          if (trimmedLine.includes('Example value:') || trimmedLine.includes('Model:')) {
+            const position = {
+              start: { line: lineNumber + 1, column: 1 },
+              end: { line: lineNumber + 1, column: line.length }
+            }
+            
+            const message = 'API documentation content detected in table cell. Consider moving examples and models outside the table.'
+            
+            if (actualSeverity === 'error') {
+              file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
+            } else {
+              file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
+            }
+          }
+        }
+        
+        // Check for indented content that looks like code (but not table separators)
+        if (line.match(/^\s{4,}/) && !line.match(/^\s*[-:|]+\s*$/) && trimmedLine !== '') {
+          const position = {
+            start: { line: lineNumber + 1, column: 1 },
+            end: { line: lineNumber + 1, column: line.length }
+          }
+          
+          const message = 'Indented code-like content detected in table. Consider moving outside the table.'
           
           if (actualSeverity === 'error') {
             file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
