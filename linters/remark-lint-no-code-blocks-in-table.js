@@ -50,14 +50,36 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
           }
         }
         
-        // Check for indented code blocks (4+ spaces at start of line within table)
-        if (line.match(/^\s{4,}/) && !line.match(/^\s*\|/)) {
+        // Check for JSON-like structures that indicate embedded code
+        if (trimmedLine.includes('|') && (
+          trimmedLine.includes('Example value:') ||
+          trimmedLine.includes('Model:') ||
+          // Lines that look like they're starting JSON in a table cell
+          /\|\s*\{\s*$/.test(trimmedLine) ||  // | { |
+          /\|\s*"[^"]*"\s*:\s*/.test(trimmedLine) // | "key": |
+        )) {
           const position = {
             start: { line: lineNumber + 1, column: 1 },
             end: { line: lineNumber + 1, column: line.length }
           }
           
-          const message = 'Indented code block detected in table. Consider moving the code block outside the table.'
+          const message = 'Code-like content detected in table cell. Consider moving code examples outside the table.'
+          
+          if (actualSeverity === 'error') {
+            file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
+          } else {
+            file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
+          }
+        }
+        
+        // Check for indented content that looks like code (but not table separators)
+        if (line.match(/^\s{4,}/) && !line.match(/^\s*[-:|]+\s*$/) && trimmedLine !== '') {
+          const position = {
+            start: { line: lineNumber + 1, column: 1 },
+            end: { line: lineNumber + 1, column: line.length }
+          }
+          
+          const message = 'Indented code-like content detected in table. Consider moving outside the table.'
           
           if (actualSeverity === 'error') {
             file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
