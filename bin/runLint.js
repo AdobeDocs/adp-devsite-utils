@@ -27,6 +27,7 @@ logStep('Testing remark rules with JavaScript API');
 const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-check-frontmatter.js'));
 const remarkLintNoAngleBrackets = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-angle-brackets.js'));
 const remarkLintHtmlCheck = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-html-check.js'));
+const remarkLintNoCodeBlocksInTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-blocks-in-table.js'));
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 // Create remark processor with all plugins
@@ -49,7 +50,8 @@ const processor = remark()
   .use(remarkLintNoHiddenTableCell, ['error'])
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
-  .use(remarkLintHtmlCheck.default);
+  .use(remarkLintHtmlCheck.default)
+  .use(remarkLintNoCodeBlocksInTable.default);
 
 if (!fs.existsSync(srcPagesDir)) {
     log('❌ src/pages directory not found', 'error');
