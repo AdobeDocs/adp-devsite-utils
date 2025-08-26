@@ -11,7 +11,6 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
 
     // Track if we're inside a table
     let inTable = false
-    let tableStartLine = 0
 
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]
@@ -23,7 +22,6 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
         const pipeCount = (trimmedLine.match(/\|/g) || []).length
         if (pipeCount >= 2) {
           inTable = true
-          tableStartLine = lineNumber + 1
         }
       }
 
@@ -32,78 +30,24 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
         inTable = false
       }
 
-      // If we're in a table, check for problematic patterns
-      if (inTable) {
-        // Check for fenced code blocks
-        if (trimmedLine.includes('```') || trimmedLine.includes('~~~')) {
-          const position = {
-            start: { line: lineNumber + 1, column: 1 },
-            end: { line: lineNumber + 1, column: line.length }
-          }
-          
-          const message = 'Fenced code block detected in table. Consider moving the code block outside the table.'
-          
-          if (actualSeverity === 'error') {
-            file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
-          } else {
-            file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
-          }
+      // If we're in a table, check for JSON-like content starting with {
+      if (inTable && trimmedLine.includes('|') && trimmedLine.includes('{')) {
+        const position = {
+          start: { line: lineNumber + 1, column: 1 },
+          end: { line: lineNumber + 1, column: line.length }
         }
         
-        // Check for malformed table cells that contain obvious code patterns
-        if (trimmedLine.includes('|')) {
-          // Flag table cells that start with just a brace (malformed JSON)
-          if (/\|\s*\{\s*\|/.test(trimmedLine) || /\|\s*\{\s*$/.test(trimmedLine)) {
-            const position = {
-              start: { line: lineNumber + 1, column: 1 },
-              end: { line: lineNumber + 1, column: line.length }
-            }
-            
-            const message = 'JSON-like content detected in table cell. Consider moving code examples outside the table.'
-            
-            if (actualSeverity === 'error') {
-              file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
-            } else {
-              file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
-            }
-          }
-          
-          // Flag obvious API documentation patterns that should be outside tables
-          if (trimmedLine.includes('Example value:') || trimmedLine.includes('Model:')) {
-            const position = {
-              start: { line: lineNumber + 1, column: 1 },
-              end: { line: lineNumber + 1, column: line.length }
-            }
-            
-            const message = 'API documentation content detected in table cell. Consider moving examples and models outside the table.'
-            
-            if (actualSeverity === 'error') {
-              file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
-            } else {
-              file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
-            }
-          }
-        }
+        const message = 'JSON-like content detected in table row. Consider moving code examples outside the table.'
         
-        // Check for indented content that looks like code (but not table separators)
-        if (line.match(/^\s{4,}/) && !line.match(/^\s*[-:|]+\s*$/) && trimmedLine !== '') {
-          const position = {
-            start: { line: lineNumber + 1, column: 1 },
-            end: { line: lineNumber + 1, column: line.length }
-          }
-          
-          const message = 'Indented code-like content detected in table. Consider moving outside the table.'
-          
-          if (actualSeverity === 'error') {
-            file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
-          } else {
-            file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
-          }
+        if (actualSeverity === 'error') {
+          file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
+        } else {
+          file.message(message, position, 'remark-lint:no-code-blocks-in-tables')
         }
       }
     }
 
-    // Also check the AST for properly parsed tables
+    // Also check the AST for properly parsed code blocks in tables
     visit(tree, 'table', (tableNode) => {
       visit(tableNode, 'tableCell', (cellNode) => {
         visit(cellNode, 'code', (codeNode) => {
@@ -118,11 +62,7 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
             }
           }
 
-          let message = 'Code block found in table cell. Consider moving the code block outside the table or using inline code instead.'
-
-          if (codeNode.lang) {
-            message += ` Found ${codeNode.lang} code block.`
-          }
+          const message = 'Code block found in table cell. Consider moving the code block outside the table.'
 
           if (actualSeverity === 'error') {
             file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
