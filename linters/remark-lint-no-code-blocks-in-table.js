@@ -35,17 +35,14 @@ const remarkLintNoCodeBlocksInTables = (severity = 'warning') => {
         // Remove content within backticks before checking for {
         const lineWithoutInlineCode = trimmedLine.replace(/`[^`]*`/g, '')
         
-        // Check for complex JSON patterns (not simple placeholders)
-        const hasComplexJson = lineWithoutInlineCode.match(/\{[^}]*["':,\[\]]/);
-        
-        // Only flag if it looks like actual JSON structure
-        if (hasComplexJson) {
+        // Only flag if { still exists after removing inline code
+        if (lineWithoutInlineCode.includes('{')) {
           const position = {
             start: { line: lineNumber + 1, column: 1 },
             end: { line: lineNumber + 1, column: line.length }
           }
           
-          const message = 'JSON code block detected in table row. Consider moving code examples outside the table.'
+          const message = 'JSON-like content detected in table row. Consider moving code examples outside the table.'
           
           if (actualSeverity === 'error') {
             file.fail(message, position, 'remark-lint:no-code-blocks-in-tables')
