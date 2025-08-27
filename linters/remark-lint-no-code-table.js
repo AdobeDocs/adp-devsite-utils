@@ -19,9 +19,8 @@ const remarkLintNoCodeTables = (severity = 'warning') => {
         // Remove content within backticks before checking
         const lineWithoutInlineCode = trimmedLine.replace(/`[^`]*`/g, '')
 
-        // Only flag if it looks like actual JSON/code, not simple placeholders
-        const hasComplexJson = lineWithoutInlineCode.match(/\{[^}]*["':,\[\]]/);
-        if (hasComplexJson) {
+        // Only flag if { or } still exists after removing inline code
+        if (lineWithoutInlineCode.includes('{') || lineWithoutInlineCode.includes('}')) {
           const position = {
             start: { line: lineNumber + 1, column: 1 },
             end: { line: lineNumber + 1, column: line.length }
