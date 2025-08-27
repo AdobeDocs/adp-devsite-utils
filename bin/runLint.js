@@ -28,7 +28,7 @@ const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'l
 const remarkLintNoAngleBrackets = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-angle-brackets.js'));
 const remarkLintHtmlCheck = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-html-check.js'));
 //const remarkLintNoCodeBlocksInTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-blocks-in-table.js'));
-const remarkLintNoCodeTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-table.js'))
+const remarkLintNoCodeTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-in-table.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 // Create remark processor with all plugins
