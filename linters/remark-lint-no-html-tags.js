@@ -47,7 +47,7 @@ const remarkLintNoHtmlTags = (severity = 'warning') => {
         if (isClosing) {
           message = `HTML closing tag </${tagName}> is not allowed. Only custom components are permitted.`
         } else if (isSelfClosing || fullTag.endsWith('/>')) {
-          message = `HTML self-closing tag <${tagName}/> is not allowed. Only custom components are permitted.`
+          message = `<${tagName}/> is not allowed. Only custom components are permitted.`
         }
 
         if (actualSeverity === 'error') {
