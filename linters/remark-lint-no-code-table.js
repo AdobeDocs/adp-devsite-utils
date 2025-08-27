@@ -13,9 +13,9 @@ const remarkLintNoCodeTables = (severity = 'warning') => {
       const line = lines[lineNumber]
       const trimmedLine = line.trim()
 
-      // Only check lines that are clearly table rows (contain multiple |)
+      // Only check lines that are table rows (contain |)
       const pipeCount = (trimmedLine.match(/\|/g) || []).length
-      if (pipeCount >= 2 && (trimmedLine.includes('{') || trimmedLine.includes('}'))) {
+      if (pipeCount >= 1 && (trimmedLine.includes('{') || trimmedLine.includes('}'))) {
         // Remove content within backticks before checking
         const lineWithoutInlineCode = trimmedLine.replace(/`[^`]*`/g, '')
 
