@@ -52,7 +52,7 @@ const processor = remark()
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintHtmlCheck.default)
-  .use(remarkLintNoCodeBlocksInTable.default);
+  .use(remarkLintNoCodeTable.default);
 
 if (!fs.existsSync(srcPagesDir)) {
     log('❌ src/pages directory not found', 'error');
