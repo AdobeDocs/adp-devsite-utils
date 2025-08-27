@@ -26,8 +26,9 @@ logStep('Testing remark rules with JavaScript API');
 // Import the custom linter plugins
 const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-check-frontmatter.js'));
 const remarkLintNoAngleBrackets = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-angle-brackets.js'));
-const remarkLintHtmlCheck = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-html-check.js'));
-//const remarkLintNoCodeBlocksInTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-blocks-in-table.js'));
+//const remarkLintHtmlCheck = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-html-check.js'));
+const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-self-close-component.js'));
+const remarkLintNoHtmlTag = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-html-tags.js'));
 const remarkLintNoCodeTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-in-table.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
@@ -51,7 +52,8 @@ const processor = remark()
   .use(remarkLintNoHiddenTableCell, ['error'])
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
-  .use(remarkLintHtmlCheck.default)
+  .use(remarkLintSelfCloseComponent.default, ['error'])
+  .use(remarkLintNoHtmlTag.default)
   .use(remarkLintNoCodeTable.default);
 
 if (!fs.existsSync(srcPagesDir)) {
