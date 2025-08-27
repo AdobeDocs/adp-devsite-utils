@@ -1,6 +1,6 @@
 import { visit } from 'unist-util-visit'
 
-const remarkLintHtmlCheck = (severity = 'warning') => {
+const remarkLintSelfCloseComponent = (severity = 'warning') => {
   return (tree, file) => {
     // Handle both array format [severity] and direct severity string
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
@@ -18,46 +18,7 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
     visit(tree, 'html', (node) => {
       const content = node.value
 
-      // First, check for any HTML tags that aren't custom components
-      const htmlTagRegex = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)(?:\s+[^>]*)?(\/?)\s*>/g
-      let match
-
-      while ((match = htmlTagRegex.exec(content)) !== null) {
-        const [fullTag, isClosing, tagName, isSelfClosing] = match
-
-        // Skip if this tag is in the custom components list
-        if (customComponents.includes(tagName.toLowerCase())) {
-          continue
-        }
-
-        // This is an unauthorized HTML tag - flag it
-        const position = {
-          start: {
-            line: node.position.start.line,
-            column: node.position.start.column + match.index + 1
-          },
-          end: {
-            line: node.position.start.line,
-            column: node.position.start.column + match.index + fullTag.length
-          }
-        }
-
-        let message = `HTML tag <${tagName}> is not allowed. Only custom components are permitted.`
-
-        if (isClosing) {
-          message = `HTML closing tag </${tagName}> is not allowed. Only custom components are permitted.`
-        } else if (isSelfClosing || fullTag.endsWith('/>')) {
-          message = `HTML self-closing tag <${tagName}/> is not allowed. Only custom components are permitted.`
-        }
-
-        if (actualSeverity === 'error') {
-          file.fail(message, position, 'remark-lint:html-check')
-        } else {
-          file.message(message, position, 'remark-lint:html-check')
-        }
-      }
-
-      // Now check for opening tags of custom components (existing logic)
+      // Check for opening tags of custom components
       for (const component of customComponents) {
         // Case-insensitive regex for component names
         const openingTagRegex = new RegExp(`<${component}(?:\\s+[^>]*)?>`, 'gi')
@@ -92,13 +53,13 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
               file.fail(
                 `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                 position,
-                'remark-lint:html-check'
+                'remark-lint:self-close-component'
               )
             } else {
               file.message(
                 `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                 position,
-                'remark-lint:html-check'
+                'remark-lint:self-close-component'
               )
             }
           } else {
@@ -136,7 +97,7 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
                 file.fail(
                   `Custom component "${actualComponentName}" should be self-closing (use <${actualComponentName} /> instead of <${actualComponentName}>...</${actualComponentName}>).`,
                   position,
-                  'remark-lint:html-check'
+                  'remark-lint:self-close-component'
                 )
               } else {
                 file.message(
@@ -153,4 +114,4 @@ const remarkLintHtmlCheck = (severity = 'warning') => {
   }
 }
 
-export default remarkLintHtmlCheck
+export default remarkLintSelfCloseComponent
