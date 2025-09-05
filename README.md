@@ -94,6 +94,13 @@ Join `#adobe-developer-website` Slack channel for help.
 
 ### AccordionItem Block
 
+The AccordionItem block creates collapsible content sections that can contain headings, tables, text, and code blocks. It uses + and - icons to indicate expand/collapse states.
+
+![accordion_block_closed](/docs/images/accordionitem-closedstate.png)
+
+![accordion_block_open](/docs/images/accordionitem-openstate.png)
+
+```
 <AccordionItem slots="heading, table, text, code"/>
 
 ### 4. Track buffer end
