@@ -7,7 +7,7 @@ The production address is https://developer.adobe.com/<pathPrefix>/
 
 For local development, you need to start three servers:
 
-1. **Main dev server** (this repo):
+1. **Content server** (this repo):
 ```bash
 npm run dev
 ```
