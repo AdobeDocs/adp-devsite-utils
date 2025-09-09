@@ -31,6 +31,7 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 const remarkLintNoHtmlTag = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-html-tags.js'));
 const remarkLintNoCodeTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-in-table.js'));
 const remarkLintNoHtmlComments = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-html-comments.js'));
+const remarkLintNoBrInTables = await import(path.joina(dpDevsiteUtilsDir, 'linters', 'remark-lint-no-br-in-tables.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 // Create remark processor with all plugins
@@ -53,6 +54,7 @@ const processor = remark()
   .use(remarkLintNoHiddenTableCell, ['error'])
   .use(remarkLintNoAngleBrackets.default, ['error'])
   .use(remarkLintNoHtmlComments.default, ['error'])
+  .use(remarkLintNoBrInTables.default, ['error'])
   .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintSelfCloseComponent.default, ['error'])
   .use(remarkLintNoHtmlTag.default)
