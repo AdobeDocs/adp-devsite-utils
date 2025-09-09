@@ -55,6 +55,7 @@ const remarkLintNoHtmlTags = (severity = 'warning') => {
         } else {
           file.message(message, position, 'remark-lint:no-html-tags')
         }
+      }
     })
   }
 }
