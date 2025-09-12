@@ -97,6 +97,35 @@ To manage URL redirections:
 - Uses incremental builds from last commit
 - **URL**: `developer.adobe.com/<pathPrefix>/`
 
+## Optional AI Metadata and FAQ Generation Github Actions
+
+**Initial AI Metadata and FAQ Generation for all files**:
+*Processes all markdown files in the specified folder to generate comprehensive AI metadata and FAQs. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
+
+- Actions > Initial AI Generation > set inputs > Run workflow
+  - Use worfklow from: Set as `main`
+  - Target branch: will send ai generated metadata as changes in a PR to whatever branch you set - default is `main`
+  - Folder path: set to read ALL files or only some - default is `src/pages`
+
+**Nightly AI Metadata Refresh for changed files**:
+*Identifies files that have changed since a specific commit and generates updated AI metadata only for those files. Useful for keeping metadata current without processing unchanged content. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
+
+- Actions > Nightly AI Metadata Refresh > set inputs > Run workflow
+  - Use workflow from: Set as `main`
+  - Base SHA: Use base SHA commit to compare changes from (leave empty to use last commit before HEAD)
+  - Target branch: will send ai generated metadata as changes in a PR to whatever branch you set - default is `main`
+  - Folder path: set to read ALL files or only some - default is `src/pages`
+  - **Note**: This workflow also runs automatically every night at 2 AM UTC to process recently changed files
+
+**Automatic AI Metadata Generation on Pull Requests**:
+*Automatically analyzes files changed in pull requests and generates AI metadata suggestions. Adds a comment to the PR with proposed metadata updates that can be reviewed and applied.*
+
+- Runs automatically when PRs are created/updated to merge to `main` with changes to files in `src/pages/**`
+- Generates AI metadata for files changed in the PR
+- **Note**: Skips PRs with titles starting with "[AI PR] Metadata Update" or branch names starting with "ai-metadata" to avoid loops
+
+**Note**: will only read valid files (skips images and binary files) and right now will skip files with JSX components but we are working on fixing that.
+
 ## Support
 
 Join `#adobe-developer-website` Slack channel for help.
