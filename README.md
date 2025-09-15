@@ -28,7 +28,7 @@ npm install
 npm run dev
 ```
 
-Once all three servers are running, navigate to http://localhost:3000/<pathPrefix>
+Once all three servers are running, navigate to `http://localhost:3000/<pathPrefix>`
 
 ## Commands
 
