@@ -1,7 +1,7 @@
 # Adobe Developer Documentation
 
 Documentation site deployed to EDS.
-The production address is https://developer.adobe.com/<pathPrefix>/
+The production address is `https://developer.adobe.com/<pathPrefix>/`
 
 ## Quick Start
 
