@@ -105,7 +105,7 @@ To manage URL redirections:
 - Actions > Initial AI Generation > set inputs > Run workflow
   - Use worfklow from: Set as `main`
   - Target branch: will send ai generated metadata as changes in a PR to whatever branch you set - default is `main`
-  - Folder path: set to read ALL files or only some - default is `src/pages`
+  - Folder path: set to read ALL files in a folder path or only some - default is `src/pages/*`
 
 **Nightly Refresh for changed files**:
 *Identifies files that have changed since a specific commit and generates updated AI metadata only for those files. Useful for keeping metadata current without processing unchanged content. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
@@ -114,7 +114,7 @@ To manage URL redirections:
   - Use workflow from: Set as `main`
   - Base SHA: Use base SHA commit to compare changes from (leave empty to use last commit before HEAD)
   - Target branch: will send ai generated metadata as changes in a PR to whatever branch you set - default is `main`
-  - Folder path: set to read ALL files or only some - default is `src/pages`
+  - Folder path: set to read ALL files in a folder path or only some - default is `src/pages/*`
   - **Note**: This workflow also runs automatically every night at 2 AM UTC to process recently changed files
 
 **Generation on Pull Requests for changed files**:
@@ -124,7 +124,7 @@ To manage URL redirections:
 - Generates AI metadata for files changed in the PR
 - **Note**: Skips PRs with titles starting with "[AI PR] Metadata Update" or branch names starting with "ai-metadata" to avoid loops
 
-**Note**: will only read valid files (skips images and binary files) and right now will skip files with JSX components but we are working on fixing that.
+**Note**: will only read valid files (skips images and binary files) and right now will skip files with JSX components but we are working on fixing that. These workflows are only for EDS repos.
 
 ## Support
 
