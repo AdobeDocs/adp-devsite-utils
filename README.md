@@ -107,7 +107,7 @@ To manage URL redirections:
   - Target branch: will send ai generated metadata as changes in a PR to whatever branch you set - default is `main`
   - Folder path: set to read ALL files or only some - default is `src/pages`
 
-**Nightly AI Metadata Refresh for changed files**:
+**Nightly Refresh for changed files**:
 *Identifies files that have changed since a specific commit and generates updated AI metadata only for those files. Useful for keeping metadata current without processing unchanged content. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
 
 - Actions > Nightly AI Metadata Refresh > set inputs > Run workflow
