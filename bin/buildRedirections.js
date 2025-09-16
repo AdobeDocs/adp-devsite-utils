@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,6 +13,7 @@ try {
     logSection('BUILD REDIRECTIONS');
     logStep('Starting redirections build process');
 
+    console.log(`env: ${process.env.FASTLY_KEY}`);
     const currentDir = process.cwd();
     verbose(`Current directory: ${currentDir}`);
 
