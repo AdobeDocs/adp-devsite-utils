@@ -15,7 +15,7 @@ try {
 
 
     console.log(`All env vars:`, Object.keys(process.env));
-    
+
     const currentDir = process.cwd();
     verbose(`Current directory: ${currentDir}`);
 
@@ -56,12 +56,12 @@ try {
         if (mdFilePath.endsWith('index.md')) {
             const source = mdFilePath.replace('/index.md', '');
             data.push({
-                "Source": source,
-                "Destination": source + '/'
+                "source": source,
+                "destination": source + '/'
             });
             data.push({
-                "Source": source + '/index',
-                "Destination": source + '/'
+                "source": source + '/index',
+                "destination": source + '/'
             });
             indexRedirects += 2;
             verbose(`    Added index redirects for: ${source}`);
@@ -71,8 +71,8 @@ try {
         else if (!mdFilePath.endsWith('config.md')) {
             const source = mdFilePath.replace('.md', '/');
             data.push({
-                "Source": source,
-                "Destination": source.replace(/\/$/, "")
+                "source": source,
+                "destination": source.replace(/\/$/, "")
             });
             trailingSlashRedirects++;
             verbose(`    Added trailing slash redirect for: ${source}`);
@@ -85,9 +85,16 @@ try {
     verbose(`  Index redirects: ${indexRedirects}`);
     verbose(`  Trailing slash redirects: ${trailingSlashRedirects}`);
 
-    logStep('Writing redirections file');
-    writeRedirectionsFile(data, __dirname);
     verbose('Redirections file written successfully');
+
+    // Convert array format to object format for fastlyRedirects.js
+    const redirectsObject = {};
+    data.forEach(redirect => {
+        redirectsObject[redirect.source] = redirect.destination;
+    });
+
+    // Output JSON to stdout for piping to fastlyRedirects.js
+    console.log(JSON.stringify(redirectsObject, null, 0));
 
 } catch (err) {
     log(`Redirections build failed: ${err.message}`, 'error');
