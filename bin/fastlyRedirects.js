@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
 import 'dotenv/config';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 
@@ -25,6 +23,7 @@ const args = process.argv.slice(2);
 const environment = args[0] || 'stage'; // Default to stage if no argument provided
 const action = args[1] || 'get-version'; // Default action
 const redirectsData = args[2]; // Optional redirects data as JSON string
+const dryRun = args.includes('--dry-run') || args.includes('-d'); // Dry run flag
 
 if (!['stage', 'prod'].includes(environment)) {
   log('Error: Environment must be "stage" or "prod"', 'error');
@@ -58,6 +57,9 @@ if (!config.dictionaryId) {
 }
 
 logStep(`Using ${environment} environment`);
+if (dryRun) {
+  log('DRY RUN MODE - No actual API calls will be made', 'warn');
+}
 verbose(`Service ID: ${config.serviceId}`);
 verbose(`Domain: ${config.domain}`);
 verbose(`Dictionary ID: ${config.dictionaryId}`);
@@ -66,6 +68,12 @@ async function getActiveVersion() {
   try {
     logSection('GET ACTIVE VERSION');
     logStep(`Getting active version for ${environment} environment`);
+
+    if (dryRun) {
+      log('DRY RUN: Would fetch active version from Fastly API', 'warn');
+      log('DRY RUN: Assuming active version is 123', 'warn');
+      return 123; // Mock version for dry run
+    }
 
     const response = await fetch(`https://api.fastly.com/service/${config.serviceId}/version`, {
       headers: {
@@ -135,23 +143,23 @@ function loadRedirectsFromData(jsonString) {
 }
 
 function validateRedirects(redirects) {
-    if (typeof redirects !== 'object' || redirects === null) {
-        throw new Error('Redirects must be a JSON object');
+  if (typeof redirects !== 'object' || redirects === null) {
+    throw new Error('Redirects must be a JSON object');
+  }
+
+  if (Array.isArray(redirects)) {
+    throw new Error('Redirects must be an object with source URLs as keys and destination URLs as values');
+  }
+
+  // Validate redirect structure - keys are sources, values are destinations
+  for (const [source, destination] of Object.entries(redirects)) {
+    if (typeof source !== 'string' || typeof destination !== 'string') {
+      throw new Error('Each redirect must have string source and destination values');
     }
-    
-    if (Array.isArray(redirects)) {
-        throw new Error('Redirects must be an object with source URLs as keys and destination URLs as values');
+    if (!source || !destination) {
+      throw new Error('Source and destination cannot be empty strings');
     }
-    
-    // Validate redirect structure - keys are sources, values are destinations
-    for (const [source, destination] of Object.entries(redirects)) {
-        if (typeof source !== 'string' || typeof destination !== 'string') {
-            throw new Error('Each redirect must have string source and destination values');
-        }
-        if (!source || !destination) {
-            throw new Error('Source and destination cannot be empty strings');
-        }
-    }
+  }
 }
 
 async function updateDictionary(versionId, redirects) {
@@ -159,26 +167,36 @@ async function updateDictionary(versionId, redirects) {
     logSection('UPDATE DICTIONARY');
     logStep(`Adding redirects to dictionary for version ${versionId}`);
 
-        // Add new redirects
-        for (const [source, destination] of Object.entries(redirects)) {
-            const response = await fetch(`https://api.fastly.com/service/${config.serviceId}/version/${versionId}/dictionary/${config.dictionaryId}/items`, {
-                method: 'POST',
-                headers: {
-                    'Fastly-Key': fastlyKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    item_key: source,
-                    item_value: destination
-                })
-            });
-            
-            if (!response.ok) {
-                verbose(`Warning: Could not add redirect ${source} -> ${destination} (status: ${response.status})`, 'warn');
-            } else {
-                verbose(`Added redirect: ${source} -> ${destination}`);
-            }
-        }
+    if (dryRun) {
+      log('DRY RUN: Would add the following redirects to Fastly dictionary:', 'warn');
+      for (const [source, destination] of Object.entries(redirects)) {
+        log(`  DRY RUN: ${source} -> ${destination}`, 'warn');
+      }
+      log(`DRY RUN: Would make ${Object.keys(redirects).length} API calls to Fastly`, 'warn');
+      log('DRY RUN: Dictionary update completed (simulated)', 'warn');
+      return;
+    }
+
+    // Add new redirects
+    for (const [source, destination] of Object.entries(redirects)) {
+      const response = await fetch(`https://api.fastly.com/service/${config.serviceId}/version/${versionId}/dictionary/${config.dictionaryId}/items`, {
+        method: 'POST',
+        headers: {
+          'Fastly-Key': fastlyKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          item_key: source,
+          item_value: destination
+        })
+      });
+
+      if (!response.ok) {
+        verbose(`Warning: Could not add redirect ${source} -> ${destination} (status: ${response.status})`, 'warn');
+      } else {
+        verbose(`Added redirect: ${source} -> ${destination}`);
+      }
+    }
 
     log('Dictionary updated successfully');
   } catch (error) {
@@ -193,33 +211,35 @@ async function main() {
       case 'get-version':
         await getActiveVersion();
         break;
-            case 'update-redirects':
-                if (!redirectsData && process.stdin.isTTY) {
-                    log('Error: Redirects source required for update-redirects action', 'error');
-                    log('Usage: node fastlyRedirects.js [stage|prod] update-redirects \'{"source":"/old","destination":"/new"}\'', 'error');
-                    log('   or: echo \'{"source":"/old","destination":"/new"}\' | node fastlyRedirects.js [stage|prod] update-redirects', 'error');
-                    process.exit(1);
-                }
-                const version = await getActiveVersion();
-                let redirects;
-                
-                if (redirectsData) {
-                    // Load from command line argument
-                    logStep('Loading redirects from command line argument');
-                    redirects = loadRedirectsFromData(redirectsData);
-                } else {
-                    // Load from stdin
-                    logStep('Loading redirects from stdin');
-                    redirects = await loadRedirectsFromStdin();
-                }
-                
-                verbose(`Loaded ${Object.keys(redirects).length} redirects`);
-                
-                await updateDictionary(version, redirects);
-                break;
+      case 'update-redirects':
+        if (!redirectsData && process.stdin.isTTY) {
+          log('Error: Redirects source required for update-redirects action', 'error');
+          log('Usage: node fastlyRedirects.js [stage|prod] update-redirects \'{"source":"/old","destination":"/new"}\'', 'error');
+          log('   or: echo \'{"source":"/old","destination":"/new"}\' | node fastlyRedirects.js [stage|prod] update-redirects', 'error');
+          process.exit(1);
+        }
+        const version = await getActiveVersion();
+        let redirects;
+
+        if (redirectsData) {
+          // Load from command line argument
+          logStep('Loading redirects from command line argument');
+          redirects = loadRedirectsFromData(redirectsData);
+        } else {
+          // Load from stdin
+          logStep('Loading redirects from stdin');
+          redirects = await loadRedirectsFromStdin();
+        }
+
+        verbose(`Loaded ${Object.keys(redirects).length} redirects`);
+
+        await updateDictionary(version, redirects);
+        break;
       default:
         log('Available actions: get-version, update-redirects');
-        log('Usage: node fastlyRedirects.js [stage|prod] [action] [redirects-data]');
+        log('Usage: node fastlyRedirects.js [stage|prod] [action] [redirects-data] [--dry-run|-d]');
+        log('Options:');
+        log('  --dry-run, -d    Show what would be done without making API calls');
     }
   } catch (error) {
     log(`Fastly operation failed: ${error.message}`, 'error');
