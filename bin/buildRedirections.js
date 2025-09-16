@@ -13,7 +13,9 @@ try {
     logSection('BUILD REDIRECTIONS');
     logStep('Starting redirections build process');
 
-    console.log(`env: ${process.env.FASTLY_KEY}`);
+
+    console.log(`All env vars:`, Object.keys(process.env));
+    
     const currentDir = process.cwd();
     verbose(`Current directory: ${currentDir}`);
 
