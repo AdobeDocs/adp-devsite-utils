@@ -97,7 +97,7 @@ To manage URL redirections:
 - Uses incremental builds from last commit
 - **URL**: `developer.adobe.com/<pathPrefix>/`
 
-## Optional AI Metadata and FAQ Generation Github Actions
+## AI Metadata and FAQ Generation
 
 **Initial AI Metadata and FAQ Generation for all files**:
 *Processes all markdown files in the specified folder to generate comprehensive AI metadata and FAQs. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
