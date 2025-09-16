@@ -99,7 +99,7 @@ To manage URL redirections:
 
 ## AI Metadata and FAQ Generation
 
-**Initial AI Metadata and FAQ Generation for all files**:
+**Initial Generation for all files**:
 *Processes all markdown files in the specified folder to generate comprehensive AI metadata and FAQs. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
 
 - Actions > Initial AI Generation > set inputs > Run workflow
