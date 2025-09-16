@@ -117,7 +117,7 @@ To manage URL redirections:
   - Folder path: set to read ALL files or only some - default is `src/pages`
   - **Note**: This workflow also runs automatically every night at 2 AM UTC to process recently changed files
 
-**Automatic AI Metadata Generation on Pull Requests**:
+**Generation on Pull Requests for changed files**:
 *Automatically analyzes files changed in pull requests and generates AI metadata suggestions. Adds a comment to the PR with proposed metadata updates that can be reviewed and applied.*
 
 - Runs automatically when PRs are created/updated to merge to `main` with changes to files in `src/pages/**`
