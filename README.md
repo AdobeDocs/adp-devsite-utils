@@ -97,10 +97,10 @@ To manage URL redirections:
 - Uses incremental builds from last commit
 - **URL**: `developer.adobe.com/<pathPrefix>/`
 
-## AI Metadata and FAQ Generation
+## AI Metadata Generation
 
 **Initial Generation for all files**:
-*Processes all markdown files in the specified folder to generate comprehensive AI metadata and FAQs. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
+*Processes all markdown files in the specified folder to generate comprehensive AI metadata. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
 
 - Actions > Initial AI Generation > set inputs > Run workflow
   - Use worfklow from: Set as `main`
