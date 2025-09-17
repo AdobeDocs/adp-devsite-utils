@@ -99,6 +99,8 @@ To manage URL redirections:
 
 ## AI Metadata Generation
 
+**This feature is in the testing stage please contact the DevSite team if you'd like to use it or need support**
+
 **Initial Generation for all files**:
 *Processes all markdown files in the specified folder to generate comprehensive AI metadata. Creates a pull request with the generated metadata added to frontmatter of each file. The generated metadata can be edited/changed or deleted entirely in the branch the action created.*
 
