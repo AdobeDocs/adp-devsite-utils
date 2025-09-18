@@ -75,17 +75,24 @@ async function getActiveVersion() {
       return 123; // Mock version for dry run
     }
 
-    const response = await fetch(`https://api.fastly.com/service/${config.serviceId}/version`, {
+    const url = `https://api.fastly.com/service/${config.serviceId}/version`;
+    verbose(`Making GET request to: ${url}`);
+    verbose(`Headers: Fastly-Key: ${fastlyKey.substring(0, 8)}...${fastlyKey.substring(fastlyKey.length - 4)}`);
+
+    const response = await fetch(url, {
       headers: {
         'Fastly-Key': fastlyKey
       }
     });
+
+    verbose(`Response status: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const versions = await response.json();
+    verbose(`Received ${versions.length} versions from Fastly API`);
     const activeVersion = versions.find(v => v.active === true);
 
     if (activeVersion) {
@@ -179,17 +186,26 @@ async function updateDictionary(versionId, redirects) {
 
     // Add new redirects
     for (const [source, destination] of Object.entries(redirects)) {
-      const response = await fetch(`https://api.fastly.com/service/${config.serviceId}/version/${versionId}/dictionary/${config.dictionaryId}/items`, {
+      const url = `https://api.fastly.com/service/${config.serviceId}/version/${versionId}/dictionary/${config.dictionaryId}/items`;
+      const payload = {
+        item_key: source,
+        item_value: destination
+      };
+
+      verbose(`Making POST request to: ${url}`);
+      verbose(`Headers: Fastly-Key: ${fastlyKey.substring(0, 8)}...${fastlyKey.substring(fastlyKey.length - 4)}, Content-Type: application/json`);
+      verbose(`Payload: ${JSON.stringify(payload)}`);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Fastly-Key': fastlyKey,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          item_key: source,
-          item_value: destination
-        })
+        body: JSON.stringify(payload)
       });
+
+      verbose(`Response status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         verbose(`Warning: Could not add redirect ${source} -> ${destination} (status: ${response.status})`, 'warn');
