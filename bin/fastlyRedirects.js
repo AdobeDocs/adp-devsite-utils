@@ -119,7 +119,9 @@ async function loadRedirectsFromStdin() {
 
       process.stdin.on('end', () => {
         try {
+          verbose(`Raw JSON data received from stdin: ${data.trim()}`);
           const redirects = JSON.parse(data.trim());
+          verbose(`Parsed JSON contains ${Object.keys(redirects).length} redirects`);
           validateRedirects(redirects);
           resolve(redirects);
         } catch (error) {
@@ -140,7 +142,9 @@ async function loadRedirectsFromStdin() {
 
 function loadRedirectsFromData(jsonString) {
   try {
+    verbose(`Raw JSON data received from command line: ${jsonString}`);
     const redirects = JSON.parse(jsonString);
+    verbose(`Parsed JSON contains ${Object.keys(redirects).length} redirects`);
     validateRedirects(redirects);
     return redirects;
   } catch (error) {
@@ -248,6 +252,12 @@ async function main() {
         }
 
         verbose(`Loaded ${Object.keys(redirects).length} redirects`);
+
+        // Log all redirects that will be processed
+        verbose('Redirects to be processed:');
+        for (const [source, destination] of Object.entries(redirects)) {
+          verbose(`  ${source} -> ${destination}`);
+        }
 
         await updateDictionary(version, redirects);
         break;
