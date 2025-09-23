@@ -7,12 +7,12 @@ The production address is `https://developer.adobe.com/<pathPrefix>/`
 
 For local development, you need to start three servers:
 
-1. **Content server** (this repo):
+1. **Content server** (your content repo):
 ```bash
 npm run dev
 ```
 
-2. **ADP Devsite** ([adp-devsite](https://github.com/AdobeDocs/adp-devsite)):
+2. **Code server** ([adp-devsite](https://github.com/AdobeDocs/adp-devsite)):
 ```bash
 git clone https://github.com/AdobeDocs/adp-devsite
 cd adp-devsite
