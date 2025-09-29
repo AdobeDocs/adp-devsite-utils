@@ -87,14 +87,8 @@ try {
 
     verbose('Redirections file written successfully');
 
-    // Convert array format to object format for fastlyRedirects.js
-    const redirectsObject = {};
-    data.forEach(redirect => {
-        redirectsObject[redirect.source] = redirect.destination;
-    });
-
-    // Output JSON to stdout for piping to fastlyRedirects.js
-    console.log(JSON.stringify(redirectsObject, null, 0));
+    // Redirects have been written to src/pages/redirects.json
+    // fastlyRedirects.js will read from this file instead of stdin
 
 } catch (err) {
     log(`Redirections build failed: ${err.message}`, 'error');
