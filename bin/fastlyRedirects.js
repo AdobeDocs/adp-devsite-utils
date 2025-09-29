@@ -116,7 +116,7 @@ async function loadRedirectsFromFile() {
     const fs = await import('fs');
     const path = await import('path');
     
-    const redirectsFilePath = path.join(process.cwd(), 'src', 'pages', 'redirects.json');
+    const redirectsFilePath = path.join(process.cwd(), 'redirects.json');
     verbose(`Loading redirects from file: ${redirectsFilePath}`);
     
     if (!fs.existsSync(redirectsFilePath)) {
@@ -139,20 +139,6 @@ async function loadRedirectsFromFile() {
     return redirects;
   } catch (error) {
     log(`Failed to load redirects from file: ${error.message}`, 'error');
-    throw error;
-  }
-}
-
-
-function loadRedirectsFromData(jsonString) {
-  try {
-    verbose(`Raw JSON data received from command line: ${jsonString}`);
-    const redirects = JSON.parse(jsonString);
-    verbose(`Parsed JSON contains ${Object.keys(redirects).length} redirects`);
-    validateRedirects(redirects);
-    return redirects;
-  } catch (error) {
-    log(`Failed to parse redirects data: ${error.message}`, 'error');
     throw error;
   }
 }
@@ -239,15 +225,8 @@ async function main() {
         const version = await getActiveVersion();
         let redirects;
 
-        if (redirectsData) {
-          // Load from command line argument
-          logStep('Loading redirects from command line argument');
-          redirects = loadRedirectsFromData(redirectsData);
-        } else {
-          // Load from redirects file
-          logStep('Loading redirects from redirects file');
-          redirects = await loadRedirectsFromFile();
-        }
+        logStep('Loading redirects from redirects file');
+        redirects = await loadRedirectsFromFile();
 
         verbose(`Loaded ${Object.keys(redirects).length} redirects`);
 
@@ -261,13 +240,10 @@ async function main() {
         break;
       default:
         log('Available actions: get-version, update-redirects');
-        log('Usage: node fastlyRedirects.js [stage|prod] [action] [redirects-data] [--dry-run|-d]');
+        log('Usage: node fastlyRedirects.js [stage|prod] [action] [--dry-run|-d]');
         log('Options:');
         log('  --dry-run, -d    Show what would be done without making API calls');
         log('  --verbose, -v    Enable verbose logging');
-        log('Notes:');
-        log('  - If no redirects-data is provided, reads from src/pages/redirects.json');
-        log('  - redirects-data should be a JSON string with source->destination mappings');
     }
   } catch (error) {
     log(`Fastly operation failed: ${error.message}`, 'error');

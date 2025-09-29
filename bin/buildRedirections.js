@@ -85,7 +85,7 @@ try {
     verbose(`  Index redirects: ${indexRedirects}`);
     verbose(`  Trailing slash redirects: ${trailingSlashRedirects}`);
 
-    logStep('Writing redirections file');
+    logStep('Writing redirections file to');
     writeRedirectionsFile(data, __dirname);
     verbose('Redirections file written successfully');
 
