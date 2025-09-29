@@ -14,7 +14,7 @@ try {
     logStep('Starting redirections build process');
 
 
-    console.log(`All env vars:`, Object.keys(process.env));
+    verbose(`All env vars: ${Object.keys(process.env).join(', ')}`);
 
     const currentDir = process.cwd();
     verbose(`Current directory: ${currentDir}`);
