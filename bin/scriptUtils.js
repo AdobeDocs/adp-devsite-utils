@@ -89,7 +89,7 @@ async function getPathPrefix() {
 }
 
 function getRedirectionsFilePath(__dirname) {
-    const redirectionsFilePath = path.join(__dirname, 'redirects.json');
+    const redirectionsFilePath = path.join(__dirname, 'src', 'pages', 'redirects.json');
     return path.resolve(redirectionsFilePath);
 }
 
