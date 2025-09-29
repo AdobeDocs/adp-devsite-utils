@@ -111,34 +111,34 @@ async function getActiveVersion() {
   }
 }
 
-async function loadRedirectsFromStdin() {
+async function loadRedirectsFromFile() {
   try {
-    let data = '';
-    process.stdin.setEncoding('utf8');
-
-    return new Promise((resolve, reject) => {
-      process.stdin.on('data', (chunk) => {
-        data += chunk;
-      });
-
-      process.stdin.on('end', () => {
-        try {
-          verbose(`Raw JSON data received from stdin: ${data.trim()}`);
-          const redirects = JSON.parse(data.trim());
-          verbose(`Parsed JSON contains ${Object.keys(redirects).length} redirects`);
-          validateRedirects(redirects);
-          resolve(redirects);
-        } catch (error) {
-          reject(new Error(`Failed to parse JSON from stdin: ${error.message}`));
-        }
-      });
-
-      process.stdin.on('error', (error) => {
-        reject(new Error(`Error reading from stdin: ${error.message}`));
-      });
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    const redirectsFilePath = path.join(process.cwd(), 'src', 'pages', 'redirects.json');
+    verbose(`Loading redirects from file: ${redirectsFilePath}`);
+    
+    if (!fs.existsSync(redirectsFilePath)) {
+      throw new Error(`Redirects file not found: ${redirectsFilePath}`);
+    }
+    
+    const fileContent = fs.readFileSync(redirectsFilePath, 'utf8');
+    verbose(`Raw file content: ${fileContent.substring(0, 200)}...`);
+    
+    const redirectsData = JSON.parse(fileContent);
+    
+    // Convert from the file format to the expected format
+    const redirects = {};
+    redirectsData.data.forEach(redirect => {
+      redirects[redirect.source] = redirect.destination;
     });
+    
+    verbose(`Parsed JSON contains ${Object.keys(redirects).length} redirects`);
+    validateRedirects(redirects);
+    return redirects;
   } catch (error) {
-    log(`Failed to load redirects from stdin: ${error.message}`, 'error');
+    log(`Failed to load redirects from file: ${error.message}`, 'error');
     throw error;
   }
 }
@@ -236,12 +236,6 @@ async function main() {
         await getActiveVersion();
         break;
       case 'update-redirects':
-        if (!redirectsData && process.stdin.isTTY) {
-          log('Error: Redirects source required for update-redirects action', 'error');
-          log('Usage: node fastlyRedirects.js [stage|prod] update-redirects \'{"source":"/old","destination":"/new"}\'', 'error');
-          log('   or: echo \'{"source":"/old","destination":"/new"}\' | node fastlyRedirects.js [stage|prod] update-redirects', 'error');
-          process.exit(1);
-        }
         const version = await getActiveVersion();
         let redirects;
 
@@ -250,9 +244,9 @@ async function main() {
           logStep('Loading redirects from command line argument');
           redirects = loadRedirectsFromData(redirectsData);
         } else {
-          // Load from stdin
-          logStep('Loading redirects from stdin');
-          redirects = await loadRedirectsFromStdin();
+          // Load from redirects file
+          logStep('Loading redirects from redirects file');
+          redirects = await loadRedirectsFromFile();
         }
 
         verbose(`Loaded ${Object.keys(redirects).length} redirects`);
@@ -270,6 +264,10 @@ async function main() {
         log('Usage: node fastlyRedirects.js [stage|prod] [action] [redirects-data] [--dry-run|-d]');
         log('Options:');
         log('  --dry-run, -d    Show what would be done without making API calls');
+        log('  --verbose, -v    Enable verbose logging');
+        log('Notes:');
+        log('  - If no redirects-data is provided, reads from src/pages/redirects.json');
+        log('  - redirects-data should be a JSON string with source->destination mappings');
     }
   } catch (error) {
     log(`Fastly operation failed: ${error.message}`, 'error');
