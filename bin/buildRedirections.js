@@ -85,10 +85,9 @@ try {
     verbose(`  Index redirects: ${indexRedirects}`);
     verbose(`  Trailing slash redirects: ${trailingSlashRedirects}`);
 
+    logStep('Writing redirections file');
+    writeRedirectionsFile(data, __dirname);
     verbose('Redirections file written successfully');
-
-    // Redirects have been written to src/pages/redirects.json
-    // fastlyRedirects.js will read from this file instead of stdin
 
 } catch (err) {
     log(`Redirections build failed: ${err.message}`, 'error');
