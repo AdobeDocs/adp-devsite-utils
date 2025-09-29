@@ -131,7 +131,7 @@ async function loadRedirectsFromFile() {
     // Convert from the file format to the expected format
     const redirects = {};
     redirectsData.data.forEach(redirect => {
-      redirects[redirect.source] = redirect.destination;
+      redirects[redirect.Source] = redirect.Destination;
     });
     
     verbose(`Parsed JSON contains ${Object.keys(redirects).length} redirects`);
