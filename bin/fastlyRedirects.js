@@ -20,10 +20,14 @@ const FASTLY_CONFIG = {
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-const environment = args[0] || 'stage'; // Default to stage if no argument provided
-const action = args[1] || 'get-version'; // Default action
-const redirectsData = args[2]; // Optional redirects data as JSON string
 const dryRun = args.includes('--dry-run') || args.includes('-d'); // Dry run flag
+const verboseFlag = args.includes('--verbose') || args.includes('-v'); // Verbose flag
+
+// Filter out flags to get positional arguments
+const positionalArgs = args.filter(arg => !arg.startsWith('--') && !arg.startsWith('-'));
+const environment = positionalArgs[0] || 'stage'; // Default to stage if no argument provided
+const action = positionalArgs[1] || 'get-version'; // Default action
+const redirectsData = positionalArgs[2]; // Optional redirects data as JSON string
 
 if (!['stage', 'prod'].includes(environment)) {
   log('Error: Environment must be "stage" or "prod"', 'error');
