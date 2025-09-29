@@ -116,7 +116,7 @@ async function loadRedirectsFromFile() {
     const fs = await import('fs');
     const path = await import('path');
     
-    const redirectsFilePath = path.join(process.cwd(), 'redirects.json');
+    const redirectsFilePath = path.join(process.cwd(), 'src', 'pages', 'redirects.json');
     verbose(`Loading redirects from file: ${redirectsFilePath}`);
     
     if (!fs.existsSync(redirectsFilePath)) {
