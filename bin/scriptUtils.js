@@ -89,7 +89,7 @@ async function getPathPrefix() {
 }
 
 function getRedirectionsFilePath(__dirname) {
-    const redirectionsFilePath = path.join(__dirname, 'src', 'pages', 'redirects.json');
+    const redirectionsFilePath = path.join(__dirname, 'redirects.json');
     return path.resolve(redirectionsFilePath);
 }
 
@@ -108,6 +108,7 @@ function writeRedirectionsFile(data, __dirname) {
     };
 
     let redirectionsFilePath = getRedirectionsFilePath(__dirname);
+    verbose(`Writing redirections file to: ${redirectionsFilePath}`);
     fs.writeFileSync(redirectionsFilePath, JSON.stringify(redirectionsData));
 }
 
