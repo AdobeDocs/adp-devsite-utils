@@ -181,23 +181,20 @@ async function updateDictionary(versionId, redirects) {
 
     // Add new redirects
     for (const [source, destination] of Object.entries(redirects)) {
-      const url = `https://api.fastly.com/service/${config.serviceId}/version/${versionId}/dictionary/${config.dictionaryId}/items`;
-      const payload = {
-        item_key: source,
-        item_value: destination
-      };
+      const url = `https://api.fastly.com/service/${config.serviceId}/dictionary/${config.dictionaryId}/item`;
+      const payload = `item_key=${source}&item_value=${destination}`;
 
       verbose(`Making POST request to: ${url}`);
-      verbose(`Headers: Fastly-Key: ${fastlyKey.substring(0, 8)}...${fastlyKey.substring(fastlyKey.length - 4)}, Content-Type: application/json`);
-      verbose(`Payload: ${JSON.stringify(payload)}`);
+      verbose(`Headers: Fastly-Key: ${fastlyKey.substring(0, 8)}...${fastlyKey.substring(fastlyKey.length - 4)}, Content-Type: application/x-www-form-urlencoded`);
+      verbose(`Payload: ${payload}`);
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Fastly-Key': fastlyKey,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: JSON.stringify(payload)
+        body: `item_key=${source}&item_value=${destination}`
       });
 
       verbose(`Response status: ${response.status} ${response.statusText}`);
