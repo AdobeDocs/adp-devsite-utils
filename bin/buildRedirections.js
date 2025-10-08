@@ -56,12 +56,12 @@ try {
         if (mdFilePath.endsWith('index.md')) {
             const source = mdFilePath.replace('/index.md', '');
             data.push({
-                "source": source,
-                "destination": source + '/'
+                "Source": source,
+                "Destination": source + '/'
             });
             data.push({
-                "source": source + '/index',
-                "destination": source + '/'
+                "Source": source + '/index',
+                "Destination": source + '/'
             });
             indexRedirects += 2;
             verbose(`    Added index redirects for: ${source}`);
@@ -71,8 +71,8 @@ try {
         else if (!mdFilePath.endsWith('config.md')) {
             const source = mdFilePath.replace('.md', '/');
             data.push({
-                "source": source,
-                "destination": source.replace(/\/$/, "")
+                "Source": source,
+                "Destination": source.replace(/\/$/, "")
             });
             trailingSlashRedirects++;
             verbose(`    Added trailing slash redirect for: ${source}`);

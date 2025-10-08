@@ -87,7 +87,7 @@ async function loadRedirectsFromFile() {
     // Convert from the file format to the expected format
     const redirects = {};
     redirectsData.data.forEach(redirect => {
-      redirects[redirect.source] = redirect.destination;
+      redirects[redirect.Source] = redirect.Destination;
     });
     
     verbose(`Parsed JSON contains ${Object.keys(redirects).length} redirects`);
@@ -106,16 +106,16 @@ function validateRedirects(redirects) {
   }
 
   if (Array.isArray(redirects)) {
-    throw new Error('Redirects must be an object with source URLs as keys and destination URLs as values');
+    throw new Error('Redirects must be an object with Source URLs as keys and Destination URLs as values');
   }
 
-  // Validate redirect structure - keys are sources, values are destinations
-  for (const [source, destination] of Object.entries(redirects)) {
-    if (typeof source !== 'string' || typeof destination !== 'string') {
-      throw new Error('Each redirect must have string source and destination values');
+  // Validate redirect structure - keys are Sources, values are Destinations
+  for (const [Source, Destination] of Object.entries(redirects)) {
+    if (typeof Source !== 'string' || typeof Destination !== 'string') {
+      throw new Error('Each redirect must have string Source and Destination values');
     }
-    if (!source || !destination) {
-      throw new Error('Source and destination cannot be empty strings');
+    if (!Source || !Destination) {
+      throw new Error('Source and Destination cannot be empty strings');
     }
   }
 }
@@ -127,8 +127,8 @@ async function updateDictionary(redirects) {
 
     if (dryRun) {
       log('DRY RUN: Would add the following redirects to Fastly dictionary:', 'warn');
-      for (const [source, destination] of Object.entries(redirects)) {
-        log(`  DRY RUN: ${source} -> ${destination}`, 'warn');
+      for (const [Source, Destination] of Object.entries(redirects)) {
+        log(`  DRY RUN: ${Source} -> ${Destination}`, 'warn');
       }
       log(`DRY RUN: Would make ${Object.keys(redirects).length} API calls to Fastly`, 'warn');
       log('DRY RUN: Dictionary update completed (simulated)', 'warn');
@@ -136,9 +136,9 @@ async function updateDictionary(redirects) {
     }
 
     // Add new redirects
-    for (const [source, destination] of Object.entries(redirects)) {
+    for (const [Source, Destination] of Object.entries(redirects)) {
       const url = `https://api.fastly.com/service/${config.serviceId}/dictionary/${config.dictionaryId}/item`;
-      const payload = `item_key=${source}&item_value=${destination}`;
+      const payload = `item_key=${Source}&item_value=${Destination}`;
 
       verbose(`Making POST request to: ${url}`);
       verbose(`Headers: Fastly-Key: ${fastlyKey.substring(0, 8)}...${fastlyKey.substring(fastlyKey.length - 4)}, Content-Type: application/x-www-form-urlencoded`);
@@ -150,15 +150,15 @@ async function updateDictionary(redirects) {
           'Fastly-Key': fastlyKey,
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `item_key=${source}&item_value=${destination}`
+        body: `item_key=${Source}&item_value=${Destination}`
       });
 
       verbose(`Response status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
-        verbose(`Warning: Could not add redirect ${source} -> ${destination} (status: ${response.status})`, 'warn');
+        verbose(`Warning: Could not add redirect ${Source} -> ${Destination} (status: ${response.status})`, 'warn');
       } else {
-        verbose(`Added redirect: ${source} -> ${destination}`);
+        verbose(`Added redirect: ${Source} -> ${Destination}`);
       }
     }
 
@@ -180,8 +180,8 @@ async function main() {
 
     // Log all redirects that will be processed
     verbose('Redirects to be processed:');
-    for (const [source, destination] of Object.entries(redirects)) {
-      verbose(`  ${source} -> ${destination}`);
+    for (const [Source, Destination] of Object.entries(redirects)) {
+      verbose(`  ${Source} -> ${Destination}`);
     }
 
     await updateDictionary(redirects);
