@@ -26,12 +26,10 @@ const verboseFlag = args.includes('--verbose') || args.includes('-v'); // Verbos
 // Filter out flags to get positional arguments
 const positionalArgs = args.filter(arg => !arg.startsWith('--') && !arg.startsWith('-'));
 const environment = positionalArgs[0] || 'stage'; // Default to stage if no argument provided
-const action = positionalArgs[1] || 'update-redirects'; // Default action
-const redirectsData = positionalArgs[2]; // Optional redirects data as JSON string
 
 if (!['stage', 'prod'].includes(environment)) {
   log('Error: Environment must be "stage" or "prod"', 'error');
-  log('Usage: node fastlyRedirects.js [stage|prod] [action]', 'error');
+  log('Usage: node fastlyRedirects.js [stage|prod]', 'error');
   process.exit(1);
 }
 
@@ -173,30 +171,20 @@ async function updateDictionary(redirects) {
 
 async function main() {
   try {
-    switch (action) {
-      case 'update-redirects':
-        let redirects;
+    let redirects;
 
-        logStep('Loading redirects from redirects file');
-        redirects = await loadRedirectsFromFile();
+    logStep('Loading redirects from redirects file');
+    redirects = await loadRedirectsFromFile();
 
-        verbose(`Loaded ${Object.keys(redirects).length} redirects`);
+    verbose(`Loaded ${Object.keys(redirects).length} redirects`);
 
-        // Log all redirects that will be processed
-        verbose('Redirects to be processed:');
-        for (const [source, destination] of Object.entries(redirects)) {
-          verbose(`  ${source} -> ${destination}`);
-        }
-
-        await updateDictionary(redirects);
-        break;
-      default:
-        log('Available actions: update-redirects');
-        log('Usage: node fastlyRedirects.js [stage|prod] [action] [--dry-run|-d]');
-        log('Options:');
-        log('  --dry-run, -d    Show what would be done without making API calls');
-        log('  --verbose, -v    Enable verbose logging');
+    // Log all redirects that will be processed
+    verbose('Redirects to be processed:');
+    for (const [source, destination] of Object.entries(redirects)) {
+      verbose(`  ${source} -> ${destination}`);
     }
+
+    await updateDictionary(redirects);
   } catch (error) {
     log(`Fastly operation failed: ${error.message}`, 'error');
     process.exit(1);
