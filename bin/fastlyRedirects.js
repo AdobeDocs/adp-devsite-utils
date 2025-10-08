@@ -26,7 +26,7 @@ const verboseFlag = args.includes('--verbose') || args.includes('-v'); // Verbos
 // Filter out flags to get positional arguments
 const positionalArgs = args.filter(arg => !arg.startsWith('--') && !arg.startsWith('-'));
 const environment = positionalArgs[0] || 'stage'; // Default to stage if no argument provided
-const action = positionalArgs[1] || 'get-version'; // Default action
+const action = positionalArgs[1] || 'update-redirects'; // Default action
 const redirectsData = positionalArgs[2]; // Optional redirects data as JSON string
 
 if (!['stage', 'prod'].includes(environment)) {
@@ -68,48 +68,6 @@ verbose(`Service ID: ${config.serviceId}`);
 verbose(`Domain: ${config.domain}`);
 verbose(`Dictionary ID: ${config.dictionaryId}`);
 
-async function getActiveVersion() {
-  try {
-    logSection('GET ACTIVE VERSION');
-    logStep(`Getting active version for ${environment} environment`);
-
-    if (dryRun) {
-      log('DRY RUN: Would fetch active version from Fastly API', 'warn');
-      log('DRY RUN: Assuming active version is 123', 'warn');
-      return 123; // Mock version for dry run
-    }
-
-    const url = `https://api.fastly.com/service/${config.serviceId}/version`;
-    verbose(`Making GET request to: ${url}`);
-    verbose(`Headers: Fastly-Key: ${fastlyKey.substring(0, 8)}...${fastlyKey.substring(fastlyKey.length - 4)}`);
-
-    const response = await fetch(url, {
-      headers: {
-        'Fastly-Key': fastlyKey
-      }
-    });
-
-    verbose(`Response status: ${response.status} ${response.statusText}`);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const versions = await response.json();
-    verbose(`Received ${versions.length} versions from Fastly API`);
-    const activeVersion = versions.find(v => v.active === true);
-
-    if (activeVersion) {
-      log(`Active version: ${activeVersion.number}`);
-      return activeVersion.number;
-    } else {
-      throw new Error('No active version found');
-    }
-  } catch (error) {
-    log(`Failed to get active version: ${error.message}`, 'error');
-    throw error;
-  }
-}
 
 async function loadRedirectsFromFile() {
   try {
@@ -164,10 +122,10 @@ function validateRedirects(redirects) {
   }
 }
 
-async function updateDictionary(versionId, redirects) {
+async function updateDictionary(redirects) {
   try {
     logSection('UPDATE DICTIONARY');
-    logStep(`Adding redirects to dictionary for version ${versionId}`);
+    logStep(`Adding redirects to dictionary`);
 
     if (dryRun) {
       log('DRY RUN: Would add the following redirects to Fastly dictionary:', 'warn');
@@ -216,11 +174,7 @@ async function updateDictionary(versionId, redirects) {
 async function main() {
   try {
     switch (action) {
-      case 'get-version':
-        await getActiveVersion();
-        break;
       case 'update-redirects':
-        const version = await getActiveVersion();
         let redirects;
 
         logStep('Loading redirects from redirects file');
@@ -234,10 +188,10 @@ async function main() {
           verbose(`  ${source} -> ${destination}`);
         }
 
-        await updateDictionary(version, redirects);
+        await updateDictionary(redirects);
         break;
       default:
-        log('Available actions: get-version, update-redirects');
+        log('Available actions: update-redirects');
         log('Usage: node fastlyRedirects.js [stage|prod] [action] [--dry-run|-d]');
         log('Options:');
         log('  --dry-run, -d    Show what would be done without making API calls');
