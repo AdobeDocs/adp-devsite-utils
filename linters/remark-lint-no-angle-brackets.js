@@ -21,7 +21,7 @@ const remarkLintNoAngleBrackets = (severity = 'warning') => {
           const content = link.replace(/^<|>$/g, '')
 
           // Check if it's a URL (starts with http, https, www, or mailto)
-          if (content.match(/^(https?:\/\/|www\.|mailto:)/)) {
+          if (content.match(/^(https?:\/\/|www\.|mailto:|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/)) {
             const position = {
               start: {
                 line: lineNumber,
