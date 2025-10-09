@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -11,6 +12,9 @@ verbose(`Current directory: ${__dirname}`);
 try {
     logSection('BUILD REDIRECTIONS');
     logStep('Starting redirections build process');
+
+
+    verbose(`All env vars: ${Object.keys(process.env).join(', ')}`);
 
     const currentDir = process.cwd();
     verbose(`Current directory: ${currentDir}`);
@@ -81,7 +85,7 @@ try {
     verbose(`  Index redirects: ${indexRedirects}`);
     verbose(`  Trailing slash redirects: ${trailingSlashRedirects}`);
 
-    logStep('Writing redirections file');
+    logStep('Writing redirections file to');
     writeRedirectionsFile(data, __dirname);
     verbose('Redirections file written successfully');
 
