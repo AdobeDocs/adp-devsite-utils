@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { remark } from 'remark';
+import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkLintNoMultipleToplevelHeadings from 'remark-lint-no-multiple-toplevel-headings';
 import remarkValidateLinks from 'remark-validate-links';
@@ -36,6 +37,7 @@ const remarkLintNoBrInTables = await import(path.join(adpDevsiteUtilsDir, 'linte
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 // Create remark processor with all plugins
 const processor = remark()
+  .use(remarkFrontmatter, ['yaml'])
   .use(remarkValidateLinks, {
     skipPathPatterns: [/.*config\.md.*/],
     root: srcPagesDir
