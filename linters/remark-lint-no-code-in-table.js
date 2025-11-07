@@ -9,9 +9,22 @@ const remarkLintNoCodeTables = (severity = 'warning') => {
     const content = file.toString()
     const lines = content.split('\n')
 
+    let inCodeBlock = false
+
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]
       const trimmedLine = line.trim()
+
+      // Track code fence blocks (```)
+      if (trimmedLine.startsWith('```')) {
+        inCodeBlock = !inCodeBlock
+        continue
+      }
+
+      // Skip lines inside code blocks
+      if (inCodeBlock) {
+        continue
+      }
 
       // Only check lines that are table rows (contain |)
       const pipeCount = (trimmedLine.match(/\|/g) || []).length
