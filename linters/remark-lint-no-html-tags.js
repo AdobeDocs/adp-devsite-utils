@@ -11,7 +11,7 @@ const remarkLintNoHtmlTags = (severity = 'warning') => {
       'discoverblock', 'announcement', 'carousel', 'summary',
       'infocard', 'embed', 'redoclyapiblock', 'codeblock',
       'list', 'horizontalline', 'tab', 'columns', 'details',
-      'hero', 'title'
+      'hero', 'title', 'superhero', 'edition'
     ]
 
     // Visit all HTML nodes to find unauthorized HTML tags
