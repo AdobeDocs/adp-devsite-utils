@@ -11,7 +11,7 @@ const remarkLintSelfCloseComponent = (severity = 'warning') => {
       'discoverblock', 'announcement', 'carousel', 'summary',
       'infocard', 'embed', 'redoclyapiblock', 'codeblock',
       'list', 'horizontalline', 'tab', 'columns', 'details',
-      'hero', 'title'
+      'hero', 'title', 'edition', 'superhero'
     ]
 
     // Visit all HTML nodes to find custom component tags
