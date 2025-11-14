@@ -33,6 +33,7 @@ const remarkLintNoHtmlTag = await import(path.join(adpDevsiteUtilsDir, 'linters'
 const remarkLintNoCodeTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-in-table.js'));
 const remarkLintNoHtmlComments = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-html-comments.js'));
 const remarkLintNoBrInTables = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-br-in-tables.js'))
+const remarkLintRedoclyapiNoPathprefix = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-redoclyapi-no-pathprefix.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 // Create remark processor with all plugins
@@ -60,7 +61,8 @@ const processor = remark()
   .use(remarkLintCheckFrontmatter.default)
   .use(remarkLintSelfCloseComponent.default, ['error'])
   .use(remarkLintNoHtmlTag.default)
-  .use(remarkLintNoCodeTable.default);
+  .use(remarkLintNoCodeTable.default)
+  .use(remarkLintRedoclyapiNoPathprefix.default, ['error']);
 
 if (!fs.existsSync(srcPagesDir)) {
     log('❌ src/pages directory not found', 'error');
