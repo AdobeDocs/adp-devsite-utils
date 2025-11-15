@@ -8,7 +8,7 @@ const remarkLintRedoclyapiNoPathprefix = (severity = 'warning') => {
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
 
     // Get the directory of the current file being processed
-    const currentFileDir = file.dirname || process.cwd()
+    const currentFileDir = file.dirname || (file.path ? path.dirname(file.path) : process.cwd())
     
     // Visit all HTML nodes to find redoclyapi components
     visit(tree, 'html', (node) => {
@@ -62,17 +62,31 @@ const remarkLintRedoclyapiNoPathprefix = (severity = 'warning') => {
             } else {
               // Check if the file exists
               let filePath
+              let searchPaths = []
               
               if (path.isAbsolute(srcValue)) {
-                // Absolute path - check from project root
+                // Absolute path - try multiple common locations
                 const projectRoot = process.cwd()
-                filePath = path.join(projectRoot, 'src', 'pages', srcValue.substring(1)) // Remove leading slash
+                searchPaths = [
+                  path.join(projectRoot, srcValue.substring(1)), // Remove leading slash
+                  path.join(projectRoot, 'src', 'pages', srcValue.substring(1)),
+                  path.join(projectRoot, 'static', srcValue.substring(1)),
+                  path.join(projectRoot, 'public', srcValue.substring(1))
+                ]
               } else {
-                // Relative path - check relative to current file
-                filePath = path.resolve(currentFileDir, srcValue)
+                // Relative path - check relative to current file and common locations
+                searchPaths = [
+                  path.resolve(currentFileDir, srcValue),
+                  path.resolve(process.cwd(), srcValue),
+                  path.resolve(process.cwd(), 'static', srcValue),
+                  path.resolve(process.cwd(), 'public', srcValue)
+                ]
               }
               
-              if (!fs.existsSync(filePath)) {
+              // Check if any of the search paths exist
+              const existingPath = searchPaths.find(p => fs.existsSync(p))
+              
+              if (!existingPath) {
                 const position = {
                   start: {
                     line: node.position.start.line,
@@ -84,7 +98,7 @@ const remarkLintRedoclyapiNoPathprefix = (severity = 'warning') => {
                   }
                 }
 
-                const message = `RedoclyAPI component references non-existent file: "${srcValue}" (resolved to: ${filePath})`
+                const message = `RedoclyAPI component references non-existent file: "${srcValue}" (searched: ${searchPaths.join(', ')})`
 
                 if (actualSeverity === 'error') {
                   file.fail(
