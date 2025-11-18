@@ -81,7 +81,7 @@ The `fastlyRedirects.js` script manages redirect rules in Fastly CDN by reading 
 
 #### 1. Environment Variables
 
-You need to set these environment variables (typically in a `.env` file):
+You need to set these environment variables (set in the `.env` file) and in the content repo's folder at the root:
 
 ```bash
 # Required for all operations
@@ -98,7 +98,7 @@ FASTLY_DEVELOPER_ADOBE_COM_INT_TO_INT_TABLE_ID=your_prod_dictionary_id
 
 #### 2. Redirects File
 
-Create a `redirects.json` file using the `buildRedirections.js` script. `buildRedirections.js` should be called after using `normalizeLinks.js`, then `buildNavigation.js` so the `buildRedirectios.js` will output the most up to date `redirects.json` file. It will generage a file with this format:
+Create a `redirects.json` file using the `buildRedirections.js` script. `buildRedirections.js` should be called after using `normalizeLinks.js`, then `buildNavigation.js` so the `buildRedirections.js` will output the most up to date `redirects.json` file. It will generate a file with this format:
 
 ```json
 {
@@ -161,9 +161,9 @@ npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flag
    ```
 
 4. **Test in content repo with stage and with a dry run**:
-     ```bash
-      npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flags]
-    ```
+   ```bash
+   npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects stage --dry-run --verbose
+   ```
 
 ### How It Works
 
@@ -184,13 +184,13 @@ npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flag
 **Staging**:
 - Actions > Deployment > Run workflow
 - Can deploy from any branch to staging
-- Uses incremental builds from last commit by default
+- Uses incremental builds from last successful workflow deploy on the current branch by default. Will use the commit before HEAD if no successful workflow deploy found
 - Use `deployAll` function for full rebuild if needed
 - **URL**: `developer-stage.adobe.com/<pathPrefix>/`
 
 **Production**:
 - Automatically deploys from `main` branch
-- Uses incremental builds from last commit
+- Uses incremental builds from last successful workflow deploy
 - **URL**: `developer.adobe.com/<pathPrefix>/`
 
 ## AI Metadata Generation
