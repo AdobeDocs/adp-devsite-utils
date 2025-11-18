@@ -72,16 +72,112 @@ To update navigation structure:
 *Note: `npm run buildNavigation` is only needed for initial Gatsby migration.*  The config.md is a replacement of gatsby-config.js.
 ⚠️ **WARNING**: This will overwrite any manual edits to `src/pages/config.md`. Only run during initial setup.
 
-## Redirects
 
-To manage URL redirections:
-1. Edit `src/pages/redirects.json` directly
+## Fastly Redirects Script
 
-*Note: `npm run buildRedirections` is only needed for initial Gatsby migration. This generates client-side redirects to support Gatsby behavior with URLs (trailing slashes).*  
+The `fastlyRedirects.js` script manages redirect rules in Fastly CDN by reading redirects from a `redirects.json` file and uploading them to a Fastly edge dictionary.
 
-⚠️ **WARNING**: This will overwrite any manual edits to `src/pages/redirects.json`. Only run during initial setup.
+### Prerequisites
 
-📝 **Note**: This creates client-side redirects only. For server-side redirects (Fastly), please reach out to the devsite team.
+#### 1. Environment Variables
+
+You need to set these environment variables (typically in a `.env` file):
+
+```bash
+# Required for all operations
+FASTLY_API_TOKEN=your_fastly_api_token
+
+# For stage environment
+FASTLY_DEVELOPER_STAGE_ADOBE_COM_SERVICE_ID=your_stage_service_id
+FASTLY_DEVELOPER_STAGE_ADOBE_COM_INT_TO_INT_TABLE_ID=your_stage_dictionary_id
+
+# For prod environment
+FASTLY_DEVELOPER_ADOBE_COM_SERVICE_ID=your_prod_service_id
+FASTLY_DEVELOPER_ADOBE_COM_INT_TO_INT_TABLE_ID=your_prod_dictionary_id
+```
+
+#### 2. Redirects File
+
+Create a `redirects.json` file using the `buildRedirections.js` script. `buildRedirections.js` should be called after using `normalizeLinks.js`, then `buildNavigation.js` so the `buildRedirectios.js` will output the most up to date `redirects.json` file. It will generage a file with this format:
+
+```json
+{
+  "data": [
+    {
+      "Source": "/old-path",
+      "Destination": "/new-path"
+    },
+    {
+      "Source": "/another-old-path",
+      "Destination": "/another-new-path"
+    }
+  ]
+}
+```
+
+### Usage
+
+#### Basic Command
+
+```bash
+node bin/fastlyRedirects.js [environment] [flags]
+```
+
+From the content repo:
+```bash
+npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flags]
+```
+
+#### Arguments
+
+**Environment** (positional, optional):
+- `stage` - Updates stage environment (default if not specified)
+- `prod` - Updates production environment
+
+**Flags** (optional):
+- `--dry-run` or `-d` - Preview changes without making actual API calls
+- `--verbose` or `-v` - Show detailed output including API requests/responses
+
+#### Examples
+
+1. **Test in stage with dry run** (recommended first step):
+   ```bash
+   node bin/fastlyRedirects.js stage --dry-run --verbose
+   ```
+
+2. **Update stage environment**:
+   ```bash
+   node bin/fastlyRedirects.js stage
+   ```
+
+3. **Update production environment** (use with caution):
+   ```bash
+   node bin/fastlyRedirects.js prod
+   ```
+
+4. **Preview production changes without applying**:
+   ```bash
+   node bin/fastlyRedirects.js prod --dry-run
+   ```
+
+4. **Test in content repo with stage and with a dry run**:
+     ```bash
+      npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flags]
+    ```
+
+### How It Works
+
+1. Loads the `redirects.json` file from the current working directory
+2. Validates the redirect structure
+3. For each redirect, makes a POST request to Fastly's API to add the redirect to the dictionary
+4. The redirects are stored as key-value pairs (Source → Destination) in the Fastly edge dictionary
+
+### Tips
+
+- Always test with `--dry-run` first to preview changes
+- Use `--verbose` to troubleshoot issues
+- The script defaults to `stage` environment for safety
+- Each redirect becomes a dictionary item in Fastly that can be used for URL rewriting at the edge
 
 ## Deployment
 
