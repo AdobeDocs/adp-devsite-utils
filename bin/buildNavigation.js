@@ -52,7 +52,8 @@ try {
     if (siteMetadata.home) {
         verbose(`Processing home configuration: ${siteMetadata.home.title}`);
         topNavMarkdown += '\n- home:\n';
-        topNavMarkdown += `    - [${siteMetadata.home.title}](${siteMetadata.home.path})\n`;
+        let resolvedHomePath = resolvePathToMarkdown(siteMetadata.home.path, verbose);
+        topNavMarkdown += `    - [${siteMetadata.home.title}](${resolvedHomePath})\n`;
 
         if (siteMetadata.home.hidden) {
             topNavMarkdown += `    - hidden\n`;
@@ -69,8 +70,9 @@ try {
         siteMetadata.versions.forEach((versionItem, index) => {
             let isSelectedText = versionItem.selected ? `selected` : '';
             let versionPathText = versionItem.path ? versionItem.path : '/';
-            topNavMarkdown += `    - [${versionItem.title}](${versionPathText}) ${isSelectedText}\n`;
-            verbose(`  Version ${index + 1}: ${versionItem.title} (${versionPathText})${versionItem.selected ? ' [SELECTED]' : ''}`);
+            let resolvedVersionPath = resolvePathToMarkdown(versionPathText, verbose);
+            topNavMarkdown += `    - [${versionItem.title}](${resolvedVersionPath}) ${isSelectedText}\n`;
+            verbose(`  Version ${index + 1}: ${versionItem.title} (${versionPathText} -> ${resolvedVersionPath})${versionItem.selected ? ' [SELECTED]' : ''}`);
         });
     } else {
         verbose('No versions configuration found');
@@ -87,14 +89,16 @@ try {
         verbose(`  Page ${index + 1}: ${navItem.title}`);
         //let pathText = navItem.path ? navItem.path : '';
         if(navItem.path) {
-            topNavMarkdown += `    - [${navItem.title}](${navItem.path})\n`;
-            verbose(`    Direct link: ${navItem.path}`);
+            let resolvedPath = resolvePathToMarkdown(navItem.path, verbose);
+            topNavMarkdown += `    - [${navItem.title}](${resolvedPath})\n`;
+            verbose(`    Direct link: ${navItem.path} -> ${resolvedPath}`);
         } else {
             topNavMarkdown += `    - ${navItem.title}\n`;
             verbose(`    Menu with ${navItem.menu?.length || 0} sub-items`);
             navItem.menu?.forEach((menuItem, menuIndex) =>{
-                topNavMarkdown += `        - [${menuItem.title}](${menuItem.path})\n`;
-                verbose(`      Sub-item ${menuIndex + 1}: ${menuItem.title} -> ${menuItem.path}`);
+                let resolvedMenuPath = resolvePathToMarkdown(menuItem.path, verbose);
+                topNavMarkdown += `        - [${menuItem.title}](${resolvedMenuPath})\n`;
+                verbose(`      Sub-item ${menuIndex + 1}: ${menuItem.title} -> ${menuItem.path} -> ${resolvedMenuPath}`);
             });
         }
     });
@@ -130,8 +134,9 @@ function buildSideNavRecursively(sideNav, depth, verbose) {
 
     for (var k in sideNav) {
         let header = sideNav[k].header ? 'header' : ''; 
-        sideNavMarkdown += `${insertSpace(depth)}- [${sideNav[k].title}](${sideNav[k].path})${header}\n`;
-        verbose(`    Side nav item: ${sideNav[k].title} (depth ${depth})${header ? ' [HEADER]' : ''}`);
+        let resolvedPath = resolvePathToMarkdown(sideNav[k].path, verbose);
+        sideNavMarkdown += `${insertSpace(depth)}- [${sideNav[k].title}](${resolvedPath})${header}\n`;
+        verbose(`    Side nav item: ${sideNav[k].title} (depth ${depth})${header ? ' [HEADER]' : ''} -> ${resolvedPath}`);
 
         if (sideNav[k].pages) {
             verbose(`    Processing ${Object.keys(sideNav[k].pages).length} sub-pages for ${sideNav[k].title}`);
@@ -139,6 +144,42 @@ function buildSideNavRecursively(sideNav, depth, verbose) {
         }
     }
     return sideNavMarkdown;
+}
+
+/**
+ * Resolves a path with trailing slash to the appropriate .md file
+ * - If path ends with /, checks if <path>/index.md exists -> returns <path>/index.md
+ * - If path ends with / and no index.md exists -> returns <path-without-slash>.md
+ * - If path doesn't end with /, returns as-is
+ */
+function resolvePathToMarkdown(urlPath, verbose) {
+    if (!urlPath || !urlPath.endsWith('/')) {
+        return urlPath;
+    }
+
+    // Remove leading slash and convert to file system path
+    const relativePath = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
+    
+    // Check if index.md exists in the directory
+    const indexPath = path.join(__dirname, 'src/pages', relativePath, 'index.md');
+    
+    if (fs.existsSync(indexPath)) {
+        verbose(`      Found index.md for ${urlPath} -> ${urlPath}index.md`);
+        return `${urlPath}index.md`;
+    }
+    
+    // No index.md, so convert directory path to file path
+    const pathWithoutSlash = urlPath.slice(0, -1);
+    const filePath = path.join(__dirname, 'src/pages', relativePath.slice(0, -1) + '.md');
+    
+    if (fs.existsSync(filePath)) {
+        verbose(`      Found file for ${urlPath} -> ${pathWithoutSlash}.md`);
+        return `${pathWithoutSlash}.md`;
+    }
+    
+    // File doesn't exist yet, but assume it will be the .md file
+    verbose(`      No file found for ${urlPath}, assuming ${pathWithoutSlash}.md`);
+    return `${pathWithoutSlash}.md`;
 }
 
 function insertSpace(indentLevel) {
