@@ -24,6 +24,45 @@ try {
     logSection('NORMALIZE LINKS');
     logStep('Starting link normalization process');
 
+    /**
+     * Resolves a path with trailing slash to the appropriate .md file
+     * - If path ends with /, checks if <path>/index.md exists -> returns <path>/index.md
+     * - If path ends with / and no index.md exists -> returns <path-without-slash>.md
+     * - If path doesn't end with /, returns as-is
+     */
+    function resolveTrailingSlashPath(linkPath, relativeToDir, relativeFiles) {
+        if (!linkPath.endsWith('/')) {
+            return linkPath;
+        }
+
+        // Check if index.md exists in the directory
+        const indexPath = `${linkPath}index.md`;
+        const indexPathNormalized = indexPath.replaceAll('/', path.sep);
+        const absolute = path.resolve(relativeToDir, indexPathNormalized);
+        const relative = path.relative(relativeToDir, absolute);
+        
+        if (relativeFiles.find((file) => file === relative)) {
+            verbose(`      Found index.md for ${linkPath} -> ${indexPath}`);
+            return indexPath;
+        }
+        
+        // No index.md, so convert directory path to file path
+        const pathWithoutSlash = linkPath.slice(0, -1);
+        const filePath = `${pathWithoutSlash}.md`;
+        const filePathNormalized = filePath.replaceAll('/', path.sep);
+        const absoluteFile = path.resolve(relativeToDir, filePathNormalized);
+        const relativeFile = path.relative(relativeToDir, absoluteFile);
+        
+        if (relativeFiles.find((file) => file === relativeFile)) {
+            verbose(`      Found file for ${linkPath} -> ${filePath}`);
+            return filePath;
+        }
+        
+        // File doesn't exist yet, but assume it will be the .md file
+        verbose(`      No file found for ${linkPath}, assuming ${filePath}`);
+        return filePath;
+    }
+
     // ensures link includes file name and extension
     function normalizeLinksInMarkdownFile(file, files) {
         verbose(`Processing file: ${file}`);
@@ -45,8 +84,8 @@ try {
 
             const toHasTrailingSlash = to.endsWith('/') || (optionalPrefix.endsWith('/') && !to);
             if (toHasTrailingSlash) {
-                to = `${to}index.md`;
-                verbose(`      Added index.md to trailing slash: "${to}"`);
+                to = resolveTrailingSlashPath(to, relativeToDir, relativeFiles);
+                verbose(`      Resolved trailing slash: "${from}" -> "${to}"`);
             }
 
             // temporarily use local machine's path separator (i.e. '\' for Windows, '/' for Mac)
