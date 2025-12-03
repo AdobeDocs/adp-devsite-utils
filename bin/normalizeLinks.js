@@ -40,24 +40,24 @@ try {
         const indexPathNormalized = indexPath.replaceAll('/', path.sep);
         const absolute = path.resolve(relativeToDir, indexPathNormalized);
         const relative = path.relative(relativeToDir, absolute);
-        
+
         if (relativeFiles.find((file) => file === relative)) {
             verbose(`      Found index.md for ${linkPath} -> ${indexPath}`);
             return indexPath;
         }
-        
+
         // No index.md, so convert directory path to file path
         const pathWithoutSlash = linkPath.slice(0, -1);
         const filePath = `${pathWithoutSlash}.md`;
         const filePathNormalized = filePath.replaceAll('/', path.sep);
         const absoluteFile = path.resolve(relativeToDir, filePathNormalized);
         const relativeFile = path.relative(relativeToDir, absoluteFile);
-        
+
         if (relativeFiles.find((file) => file === relativeFile)) {
             verbose(`      Found file for ${linkPath} -> ${filePath}`);
             return filePath;
         }
-        
+
         // File doesn't exist yet, but assume it will be the .md file
         verbose(`      No file found for ${linkPath}, assuming ${filePath}`);
         return filePath;
@@ -82,22 +82,6 @@ try {
             let to = from;
             verbose(`    Link ${index + 1}: "${from}"`);
 
-            // Handle absolute paths starting with / (project-relative paths)
-            // Convert them to relative paths from the current file FIRST
-            let wasAbsolutePath = false;
-            if (to.startsWith('/')) {
-                wasAbsolutePath = true;
-                verbose(`      Detected absolute path: "${to}"`);
-                // Remove leading slash and resolve from project root
-                const pathFromRoot = to.slice(1);
-                const absoluteFromRoot = path.join(__dirname, pathFromRoot);
-                // Convert to relative path from current file's directory
-                to = path.relative(relativeToDir, absoluteFromRoot);
-                // Convert back to URL format with forward slashes
-                to = to.replaceAll(path.sep, '/');
-                verbose(`      Converted to relative path: "${to}"`);
-            }
-
             const toHasTrailingSlash = to.endsWith('/') || (optionalPrefix.endsWith('/') && !to);
             if (toHasTrailingSlash) {
                 to = resolveTrailingSlashPath(to, relativeToDir, relativeFiles);
@@ -110,12 +94,9 @@ try {
 
             // ensure simplest relative path
             // this removes trailing slash, so need to do this after check for trailing slash above
-            // Skip this step if we already converted from absolute path
-            if (!wasAbsolutePath) {
-                const absolute = path.resolve(relativeToDir, to);
-                const relative = path.relative(relativeToDir, absolute);
-                to = relative;
-            }
+            const absolute = path.resolve(relativeToDir, to);
+            const relative = path.relative(relativeToDir, absolute);
+            to = relative;
 
             // add missing file extension only if we're sure it's the right one
             // if there's more than one option, let user manually fix it
@@ -153,7 +134,7 @@ try {
         });
     }
 
-        logStep('Getting deployable files');
+    logStep('Getting deployable files');
     const files = getDeployableFiles(__dirname);
     verbose(`Found ${files.length} deployable files`);
 
