@@ -2,7 +2,6 @@
 
 import fs from 'node:fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 const {
     getDeployableFiles,
@@ -25,6 +24,16 @@ try {
     logStep('Starting link normalization process');
 
     /**
+     * Helper: Check if a path exists in relativeFiles
+     */
+    function pathExists(urlPath, relativeToDir, relativeFiles) {
+        const osPath = urlPath.replaceAll('/', path.sep);
+        const absolute = path.resolve(relativeToDir, osPath);
+        const relative = path.relative(relativeToDir, absolute);
+        return relativeFiles.includes(relative);
+    }
+
+    /**
      * Resolves a path with trailing slash to the appropriate .md file
      * - If path ends with /, checks if <path>/index.md exists -> returns <path>/index.md
      * - If path ends with / and no index.md exists -> returns <path-without-slash>.md
@@ -37,30 +46,12 @@ try {
 
         // Check if index.md exists in the directory
         const indexPath = `${linkPath}index.md`;
-        const indexPathNormalized = indexPath.replaceAll('/', path.sep);
-        const absolute = path.resolve(relativeToDir, indexPathNormalized);
-        const relative = path.relative(relativeToDir, absolute);
-
-        if (relativeFiles.find((file) => file === relative)) {
-            verbose(`      Found index.md for ${linkPath} -> ${indexPath}`);
+        if (pathExists(indexPath, relativeToDir, relativeFiles)) {
             return indexPath;
         }
 
-        // No index.md, so convert directory path to file path
-        const pathWithoutSlash = linkPath.slice(0, -1);
-        const filePath = `${pathWithoutSlash}.md`;
-        const filePathNormalized = filePath.replaceAll('/', path.sep);
-        const absoluteFile = path.resolve(relativeToDir, filePathNormalized);
-        const relativeFile = path.relative(relativeToDir, absoluteFile);
-
-        if (relativeFiles.find((file) => file === relativeFile)) {
-            verbose(`      Found file for ${linkPath} -> ${filePath}`);
-            return filePath;
-        }
-
-        // File doesn't exist yet, but assume it will be the .md file
-        verbose(`      No file found for ${linkPath}, assuming ${filePath}`);
-        return filePath;
+        // No index.md, convert to .md file
+        return `${linkPath.slice(0, -1)}.md`;
     }
 
     // ensures link includes file name and extension
@@ -83,67 +74,48 @@ try {
             // Reconstruct full path including the prefix (/, ./, or nothing)
             const from = optionalPrefix ? optionalPrefix + fromPath : fromPath;
             let to = from;
-            verbose(`    Link ${index + 1}: "${from}"`);
 
             // Handle absolute paths starting with / (project-relative paths)
-            // Convert them to relative paths from the current file FIRST
-            let wasAbsolutePath = false;
+            // Convert them to relative paths from the current file
             if (to.startsWith('/')) {
-                wasAbsolutePath = true;
-                verbose(`      Detected absolute path: "${to}"`);
-                // Remove leading slash and resolve from project root
                 const pathFromRoot = to.slice(1);
                 const absoluteFromRoot = path.join(__dirname, pathFromRoot);
-                // Convert to relative path from current file's directory (using absolute paths for both)
                 to = path.relative(absoluteToDir, absoluteFromRoot);
-                // Convert back to URL format with forward slashes
                 to = to.replaceAll(path.sep, '/');
-                verbose(`      Converted to relative path: "${to}"`);
+            } else {
+                // Normalize relative paths to simplest form
+                const osPath = to.replaceAll('/', path.sep);
+                const absolute = path.resolve(relativeToDir, osPath);
+                to = path.relative(relativeToDir, absolute);
+                to = to.replaceAll(path.sep, '/');
             }
 
-            const toHasTrailingSlash = to.endsWith('/') || (optionalPrefix.endsWith('/') && !to);
-            if (toHasTrailingSlash) {
+            // Resolve trailing slashes to index.md or .md file
+            if (to.endsWith('/')) {
                 to = resolveTrailingSlashPath(to, relativeToDir, relativeFiles);
-                verbose(`      Resolved trailing slash: "${from}" -> "${to}"`);
             }
 
-            // temporarily use local machine's path separator (i.e. '\' for Windows, '/' for Mac)
-            // to compare files retrieved from local machine
-            to = to.replaceAll('/', path.sep);
+            // Add missing file extension if we can determine it unambiguously
+            const osPath = to.replaceAll('/', path.sep);
+            const potentialFileExtensions = relativeFiles
+                .filter((file) => removeFileExtension(file) === osPath)
+                .map((file) => path.extname(file));
 
-            // ensure simplest relative path
-            // this removes trailing slash, so need to do this after check for trailing slash above
-            // Skip this redundant step if we already converted from absolute path
-            if (!wasAbsolutePath) {
-                const absolute = path.resolve(relativeToDir, to);
-                const relative = path.relative(relativeToDir, absolute);
-                to = relative;
-            }
-
-            // add missing file extension only if we're sure it's the right one
-            // if there's more than one option, let user manually fix it
-            const potentialFileExtensions = relativeFiles.filter((file) => removeFileExtension(file) === to).map((file) => path.extname(file));
             if (potentialFileExtensions.length === 1) {
                 const ext = potentialFileExtensions[0];
-                if (!to.endsWith(ext) && to) {
+                if (!to.endsWith(ext)) {
                     to = `${to}${ext}`;
-                    verbose(`      Added missing extension: "${to}"`);
                 }
             }
 
-            // ensure the link we constructed above exists
-            const toExists = relativeFiles.find((file) => to === file);
-
-            // revert back to URL path separator '/'
-            to = to.replaceAll(path.sep, '/');
+            // Check if the normalized link exists
+            const toExists = pathExists(to, relativeToDir, relativeFiles);
 
             if (to !== from && toExists) {
                 linkMap.set(from, to);
-                verbose(`      Normalized: "${from}" -> "${to}"`);
+                verbose(`    "${from}" -> "${to}"`);
             } else if (to !== from && !toExists) {
-                verbose(`      Warning: Normalized link "${to}" not found in files`);
-            } else {
-                verbose(`      No change needed: "${from}"`);
+                verbose(`    Warning: "${from}" -> "${to}" (not found)`);
             }
         });
 
