@@ -82,6 +82,20 @@ try {
             let to = from;
             verbose(`    Link ${index + 1}: "${from}"`);
 
+            // Handle absolute paths starting with / (project-relative paths)
+            // Convert them to relative paths from the current file FIRST
+            if (to.startsWith('/')) {
+                verbose(`      Detected absolute path: "${to}"`);
+                // Remove leading slash and resolve from project root
+                const pathFromRoot = to.slice(1);
+                const absoluteFromRoot = path.join(__dirname, pathFromRoot);
+                // Convert to relative path from current file's directory
+                to = path.relative(relativeToDir, absoluteFromRoot);
+                // Convert back to URL format with forward slashes
+                to = to.replaceAll(path.sep, '/');
+                verbose(`      Converted to relative path: "${to}"`);
+            }
+
             const toHasTrailingSlash = to.endsWith('/') || (optionalPrefix.endsWith('/') && !to);
             if (toHasTrailingSlash) {
                 to = resolveTrailingSlashPath(to, relativeToDir, relativeFiles);
