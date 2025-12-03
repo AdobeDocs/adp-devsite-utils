@@ -75,6 +75,11 @@ try {
             const from = optionalPrefix ? optionalPrefix + fromPath : fromPath;
             let to = from;
 
+            // Resolve trailing slashes FIRST (before normalization removes them)
+            if (to.endsWith('/')) {
+                to = resolveTrailingSlashPath(to, relativeToDir, relativeFiles);
+            }
+
             // Handle absolute paths starting with / (project-relative paths)
             // Convert them to relative paths from the current file
             if (to.startsWith('/')) {
@@ -88,11 +93,6 @@ try {
                 const absolute = path.resolve(relativeToDir, osPath);
                 to = path.relative(relativeToDir, absolute);
                 to = to.replaceAll(path.sep, '/');
-            }
-
-            // Resolve trailing slashes to index.md or .md file
-            if (to.endsWith('/')) {
-                to = resolveTrailingSlashPath(to, relativeToDir, relativeFiles);
             }
 
             // Add missing file extension if we can determine it unambiguously
