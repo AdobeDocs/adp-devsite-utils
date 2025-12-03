@@ -82,17 +82,9 @@ try {
             let to = from;
             verbose(`    Link ${index + 1}: "${from}"`);
 
-            const toHasTrailingSlash = to.endsWith('/') || (optionalPrefix.endsWith('/') && !to);
-            if (toHasTrailingSlash) {
-                to = resolveTrailingSlashPath(to, relativeToDir, relativeFiles);
-                verbose(`      Resolved trailing slash: "${from}" -> "${to}"`);
-            }
-
             // Handle absolute paths starting with / (project-relative paths)
-            // Convert them to relative paths from the current file
-            let isAbsolutePath = false;
+            // Convert them to relative paths from the current file FIRST
             if (to.startsWith('/')) {
-                isAbsolutePath = true;
                 verbose(`      Detected absolute path: "${to}"`);
                 // Remove leading slash and resolve from project root
                 const pathFromRoot = to.slice(1);
@@ -100,6 +92,12 @@ try {
                 // Convert to relative path from current file's directory
                 to = path.relative(relativeToDir, absoluteFromRoot);
                 verbose(`      Converted to relative path: "${to}"`);
+            }
+
+            const toHasTrailingSlash = to.endsWith('/') || (optionalPrefix.endsWith('/') && !to);
+            if (toHasTrailingSlash) {
+                to = resolveTrailingSlashPath(to, relativeToDir, relativeFiles);
+                verbose(`      Resolved trailing slash: "${from}" -> "${to}"`);
             }
 
             // temporarily use local machine's path separator (i.e. '\' for Windows, '/' for Mac)
