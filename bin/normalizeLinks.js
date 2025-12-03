@@ -88,6 +88,20 @@ try {
                 verbose(`      Resolved trailing slash: "${from}" -> "${to}"`);
             }
 
+            // Handle absolute paths starting with / (project-relative paths)
+            // Convert them to relative paths from the current file
+            let isAbsolutePath = false;
+            if (to.startsWith('/')) {
+                isAbsolutePath = true;
+                verbose(`      Detected absolute path: "${to}"`);
+                // Remove leading slash and resolve from project root
+                const pathFromRoot = to.slice(1);
+                const absoluteFromRoot = path.join(__dirname, pathFromRoot);
+                // Convert to relative path from current file's directory
+                to = path.relative(relativeToDir, absoluteFromRoot);
+                verbose(`      Converted to relative path: "${to}"`);
+            }
+
             // temporarily use local machine's path separator (i.e. '\' for Windows, '/' for Mac)
             // to compare files retrieved from local machine
             to = to.replaceAll('/', path.sep);
