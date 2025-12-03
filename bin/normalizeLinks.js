@@ -80,8 +80,8 @@ try {
         linkArray.forEach((link, index) => {
             const optionalPrefix = link[2] ?? '';
             const fromPath = link[3] ?? '';
-            // Reconstruct full path including the prefix if it's an absolute path
-            const from = optionalPrefix === '/' ? '/' + fromPath : fromPath;
+            // Reconstruct full path including the prefix (/, ./, or nothing)
+            const from = optionalPrefix ? optionalPrefix + fromPath : fromPath;
             let to = from;
             verbose(`    Link ${index + 1}: "${from}"`);
 
