@@ -67,6 +67,7 @@ try {
     function normalizeLinksInMarkdownFile(file, files) {
         verbose(`Processing file: ${file}`);
         const relativeToDir = path.dirname(file);
+        const absoluteToDir = path.resolve(__dirname, relativeToDir);
         const relativeFiles = files.map((file) => path.relative(relativeToDir, file));
         const linkMap = new Map();
 
@@ -84,13 +85,15 @@ try {
 
             // Handle absolute paths starting with / (project-relative paths)
             // Convert them to relative paths from the current file FIRST
+            let wasAbsolutePath = false;
             if (to.startsWith('/')) {
+                wasAbsolutePath = true;
                 verbose(`      Detected absolute path: "${to}"`);
                 // Remove leading slash and resolve from project root
                 const pathFromRoot = to.slice(1);
                 const absoluteFromRoot = path.join(__dirname, pathFromRoot);
-                // Convert to relative path from current file's directory
-                to = path.relative(relativeToDir, absoluteFromRoot);
+                // Convert to relative path from current file's directory (using absolute paths for both)
+                to = path.relative(absoluteToDir, absoluteFromRoot);
                 // Convert back to URL format with forward slashes
                 to = to.replaceAll(path.sep, '/');
                 verbose(`      Converted to relative path: "${to}"`);
@@ -108,9 +111,12 @@ try {
 
             // ensure simplest relative path
             // this removes trailing slash, so need to do this after check for trailing slash above
-            const absolute = path.resolve(relativeToDir, to);
-            const relative = path.relative(relativeToDir, absolute);
-            to = relative;
+            // Skip this redundant step if we already converted from absolute path
+            if (!wasAbsolutePath) {
+                const absolute = path.resolve(relativeToDir, to);
+                const relative = path.relative(relativeToDir, absolute);
+                to = relative;
+            }
 
             // add missing file extension only if we're sure it's the right one
             // if there's more than one option, let user manually fix it
