@@ -137,6 +137,7 @@ npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flag
 **Flags** (optional):
 - `--dry-run` or `-d` - Preview changes without making actual API calls
 - `--verbose` or `-v` - Show detailed output including API requests/responses
+- `--remove` or `-r` - Remove redirects from Fastly instead of adding them
 
 #### Examples
 
@@ -160,17 +161,36 @@ npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flag
    node bin/fastlyRedirects.js prod --dry-run
    ```
 
-4. **Test in content repo with stage and with a dry run**:
+5. **Remove redirects from stage** (test with dry-run first):
+   ```bash
+   node bin/fastlyRedirects.js stage --remove --dry-run
+   node bin/fastlyRedirects.js stage --remove
+   ```
+
+6. **Remove redirects from production**:
+   ```bash
+   node bin/fastlyRedirects.js prod --remove --dry-run
+   node bin/fastlyRedirects.js prod --remove
+   ```
+
+7. **Test in content repo with stage and with a dry run**:
    ```bash
    npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects stage --dry-run --verbose
    ```
 
 ### How It Works
 
+**Adding Redirects (default mode):**
 1. Loads the `redirects.json` file from the current working directory
 2. Validates the redirect structure
 3. For each redirect, makes a POST request to Fastly's API to add the redirect to the dictionary
 4. The redirects are stored as key-value pairs (Source → Destination) in the Fastly edge dictionary
+
+**Removing Redirects (--remove flag):**
+1. Loads the `redirects.json` file from the current working directory
+2. Validates the redirect structure
+3. For each redirect, makes a DELETE request to Fastly's API to remove the redirect from the dictionary
+4. Only the Source keys are needed for removal (Destination values are ignored)
 
 ### Tips
 
@@ -178,6 +198,7 @@ npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flag
 - Use `--verbose` to troubleshoot issues
 - The script defaults to `stage` environment for safety
 - Each redirect becomes a dictionary item in Fastly that can be used for URL rewriting at the edge
+- When removing redirects, you can use the same `redirects.json` file format - only the Source keys will be used for deletion
 
 ## Deployment
 
