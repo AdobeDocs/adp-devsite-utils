@@ -49,6 +49,7 @@ const processor = remark()
           timeout: {
               request: 10000, // Set a 10-second timeout
           },
+          followRedirect: true, // Allow redirects (don't treat as dead links)
       },
   })
   .use(remarkLintNoMultipleToplevelHeadings)
