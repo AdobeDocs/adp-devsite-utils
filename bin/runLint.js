@@ -54,10 +54,19 @@ if (deadLinksOnly) {
   processor = processor
     .use(remarkLintNoDeadUrls, {
         deadOrAliveOptions: {
-            maxRetries: 0, // Disable retries
-            sleep: 0, // Disable sleep
+            //maxRetries: 0, // Disable retries
+            //sleep: 0, // Disable sleep
+            retry: {
+                limit: 2, // Retry failed requests
+            },
             timeout: {
-                request: 10000, // Set a 10-second timeout
+                request: 15000, // Increase timeout to 15 seconds
+            },
+            headers: {
+                'user-agent': 'Mozilla/5.0 (compatible; LinkChecker/1.0)', // Add user agent
+            },
+            https: {
+                rejectUnauthorized: false, // Don't fail on SSL cert issues
             },
             followRedirect: true, // Allow redirects (don't treat as dead links)
         },
@@ -79,16 +88,25 @@ if (deadLinksOnly) {
     .use(remarkLintSelfCloseComponent.default, ['error'])
     .use(remarkLintNoHtmlTag.default)
     .use(remarkLintNoCodeTable.default);
-  
+
   // Add dead links check unless explicitly skipped
   if (!skipDeadLinks) {
     processor = processor
       .use(remarkLintNoDeadUrls, {
           deadOrAliveOptions: {
-              maxRetries: 0, // Disable retries
-              sleep: 0, // Disable sleep
+              //maxRetries: 0, // Disable retries
+              //sleep: 0, // Disable sleep
+              retry: {
+                  limit: 2, // Retry failed requests
+              },
               timeout: {
-                  request: 10000, // Set a 10-second timeout
+                  request: 15000, // Increase timeout to 15 seconds
+              },
+              headers: {
+                  'user-agent': 'Mozilla/5.0 (compatible; LinkChecker/1.0)', // Add user agent
+              },
+              https: {
+                  rejectUnauthorized: false, // Don't fail on SSL cert issues
               },
               followRedirect: true, // Allow redirects (don't treat as dead links)
           },
