@@ -95,7 +95,7 @@ if (markdownFiles.length === 0) {
     process.exit(0);
 }
 
-log(`Found ${markdownFiles.length} markdown files to test`);
+verbose(`Found ${markdownFiles.length} markdown files to test`);
 
 // Process each file
 let totalIssues = 0;
