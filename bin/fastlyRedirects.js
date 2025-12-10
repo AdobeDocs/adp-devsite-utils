@@ -190,7 +190,7 @@ async function removeDictionary(redirects) {
 
     // Remove redirects
     for (const [Source, Destination] of Object.entries(redirects)) {
-      const url = `https://api.fastly.com/service/${config.serviceId}/dictionary/${config.dictionaryId}/item/${Source}`;
+      const url = `https://api.fastly.com/service/${config.serviceId}/dictionary/${config.dictionaryId}/item/${encodeURIComponent(Source)}`;
 
       verbose(`Making DELETE request to: ${url}`);
       verbose(`Headers: Fastly-Key: ${fastlyKey.substring(0, 8)}...${fastlyKey.substring(fastlyKey.length - 4)}`);
