@@ -186,6 +186,7 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
         'remark-lint:check-frontmatter'
       )
     }
+  }
 }
 
 export default remarkLintCheckFrontmatter
