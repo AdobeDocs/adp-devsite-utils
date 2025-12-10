@@ -223,6 +223,37 @@ npx --yes github:AdobeDocs/adp-devsite-utils fastlyRedirects [environment] [flag
 - The script defaults to `stage` environment for safety
 - Each redirect becomes a dictionary item in Fastly that can be used for URL rewriting at the edge
 - When removing redirects, you can use the same `redirects.json` file format - only the Source keys will be used for deletion
+- After uploading redirects, use `redirectChecker.js` to verify they work correctly
+
+## Redirect Checker
+
+After uploading redirects to Fastly, you can verify they're working correctly using the redirect checker script.
+
+### Usage
+
+```bash
+node bin/redirectChecker.js [stage|prod] [--verbose]
+```
+
+From the content repo:
+```bash
+npx --yes github:AdobeDocs/adp-devsite-utils redirectChecker [stage|prod] [--verbose]
+```
+
+### Examples
+
+```bash
+# Test redirects on stage
+node bin/redirectChecker.js stage
+
+# Test redirects on production with verbose output
+node bin/redirectChecker.js prod --verbose
+```
+
+The script will test each redirect from `redirects.json` and report:
+- ✓ Successful redirects that return 200
+- ✗ Failed redirects with error details
+- A summary of total tested, successful, and failed redirects
 
 ## Deployment
 
