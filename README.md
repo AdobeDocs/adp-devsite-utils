@@ -84,7 +84,7 @@ npx --yes github:AdobeDocs/adp-devsite-utils runLint --dead-links-only
 **Options:**
 - `-v` or `--verbose` - Show detailed output including all files processed
 - `--dead-links-only` - Only check for dead external URLs (skips all other linting rules)
-- `--skip-dead-links` or `--no-dead-links` - Run all linting rules EXCEPT dead links check (faster)
+- `--skip-dead-links` - Run all linting rules EXCEPT dead links check (faster)
 
 **Troubleshooting**: If pages are not showing up as expected, check lint errors or warnings to identify potential issues.
 
