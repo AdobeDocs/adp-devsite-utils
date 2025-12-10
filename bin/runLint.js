@@ -21,8 +21,18 @@ const adpDevsiteUtilsDir = path.dirname(__dirname);
 // Get the current working directory (target repo where the command is run)
 const targetDir = process.cwd();
 
+// Check for flags
+const deadLinksOnly = process.argv.includes('--dead-links-only');
+const skipDeadLinks = process.argv.includes('--skip-dead-links') || process.argv.includes('--no-dead-links');
+
 logSection('TEST LINT');
-logStep('Testing remark rules with JavaScript API');
+if (deadLinksOnly) {
+    logStep('Testing dead links only');
+} else if (skipDeadLinks) {
+    logStep('Testing remark rules (skipping dead links check)');
+} else {
+    logStep('Testing remark rules with JavaScript API');
+}
 
 // Import the custom linter plugins
 const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-check-frontmatter.js'));
@@ -35,33 +45,56 @@ const remarkLintNoHtmlComments = await import(path.join(adpDevsiteUtilsDir, 'lin
 const remarkLintNoBrInTables = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-br-in-tables.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
-// Create remark processor with all plugins
-const processor = remark()
-  .use(remarkFrontmatter, ['yaml'])
-  .use(remarkValidateLinks, {
-    skipPathPatterns: [/.*config\.md.*/],
-    root: srcPagesDir
-  })
-  .use(remarkLintNoDeadUrls, {
-      deadOrAliveOptions: {
-          maxRetries: 0, // Disable retries
-          sleep: 0, // Disable sleep
-          timeout: {
-              request: 10000, // Set a 10-second timeout
+
+// Create remark processor with plugins
+let processor = remark().use(remarkFrontmatter, ['yaml']);
+
+if (deadLinksOnly) {
+  // Only check for dead URLs
+  processor = processor
+    .use(remarkLintNoDeadUrls, {
+        deadOrAliveOptions: {
+            maxRetries: 0, // Disable retries
+            sleep: 0, // Disable sleep
+            timeout: {
+                request: 10000, // Set a 10-second timeout
+            },
+            followRedirect: true, // Allow redirects (don't treat as dead links)
+        },
+    });
+} else {
+  // Run all linting rules (optionally skipping dead links)
+  processor = processor
+    .use(remarkValidateLinks, {
+      skipPathPatterns: [/.*config\.md.*/],
+      root: srcPagesDir
+    })
+    .use(remarkLintNoMultipleToplevelHeadings)
+    .use(remarkGfm)
+    .use(remarkLintNoHiddenTableCell, ['error'])
+    .use(remarkLintNoAngleBrackets.default, ['error'])
+    .use(remarkLintNoHtmlComments.default, ['error'])
+    .use(remarkLintNoBrInTables.default, ['error'])
+    .use(remarkLintCheckFrontmatter.default)
+    .use(remarkLintSelfCloseComponent.default, ['error'])
+    .use(remarkLintNoHtmlTag.default)
+    .use(remarkLintNoCodeTable.default);
+  
+  // Add dead links check unless explicitly skipped
+  if (!skipDeadLinks) {
+    processor = processor
+      .use(remarkLintNoDeadUrls, {
+          deadOrAliveOptions: {
+              maxRetries: 0, // Disable retries
+              sleep: 0, // Disable sleep
+              timeout: {
+                  request: 10000, // Set a 10-second timeout
+              },
+              followRedirect: true, // Allow redirects (don't treat as dead links)
           },
-          followRedirect: true, // Allow redirects (don't treat as dead links)
-      },
-  })
-  .use(remarkLintNoMultipleToplevelHeadings)
-  .use(remarkGfm)
-  .use(remarkLintNoHiddenTableCell, ['error'])
-  .use(remarkLintNoAngleBrackets.default, ['error'])
-  .use(remarkLintNoHtmlComments.default, ['error'])
-  .use(remarkLintNoBrInTables.default, ['error'])
-  .use(remarkLintCheckFrontmatter.default)
-  .use(remarkLintSelfCloseComponent.default, ['error'])
-  .use(remarkLintNoHtmlTag.default)
-  .use(remarkLintNoCodeTable.default);
+      });
+  }
+}
 
 if (!fs.existsSync(srcPagesDir)) {
     log('❌ src/pages directory not found', 'error');
