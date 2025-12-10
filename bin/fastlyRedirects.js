@@ -22,6 +22,7 @@ const FASTLY_CONFIG = {
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run') || args.includes('-d'); // Dry run flag
 const verboseFlag = args.includes('--verbose') || args.includes('-v'); // Verbose flag
+const removeMode = args.includes('--remove') || args.includes('-r'); // Remove mode flag
 
 // Filter out flags to get positional arguments
 const positionalArgs = args.filter(arg => !arg.startsWith('--') && !arg.startsWith('-'));
@@ -29,7 +30,7 @@ const environment = positionalArgs[0] || 'stage'; // Default to stage if no argu
 
 if (!['stage', 'prod'].includes(environment)) {
   log('Error: Environment must be "stage" or "prod"', 'error');
-  log('Usage: node fastlyRedirects.js [stage|prod]', 'error');
+  log('Usage: node fastlyRedirects.js [stage|prod] [--dry-run] [--verbose] [--remove]', 'error');
   process.exit(1);
 }
 
@@ -59,6 +60,9 @@ if (!config.dictionaryId) {
 }
 
 logStep(`Using ${environment} environment`);
+if (removeMode) {
+  log('REMOVE MODE - Redirects will be deleted from Fastly dictionary', 'warn');
+}
 if (dryRun) {
   log('DRY RUN MODE - No actual API calls will be made', 'warn');
 }
@@ -169,6 +173,51 @@ async function updateDictionary(redirects) {
   }
 }
 
+async function removeDictionary(redirects) {
+  try {
+    logSection('REMOVE FROM DICTIONARY');
+    logStep(`Removing redirects from dictionary`);
+
+    if (dryRun) {
+      log('DRY RUN: Would remove the following redirects from Fastly dictionary:', 'warn');
+      for (const [Source, Destination] of Object.entries(redirects)) {
+        log(`  DRY RUN: Remove ${Source} (currently points to ${Destination})`, 'warn');
+      }
+      log(`DRY RUN: Would make ${Object.keys(redirects).length} API calls to Fastly`, 'warn');
+      log('DRY RUN: Dictionary removal completed (simulated)', 'warn');
+      return;
+    }
+
+    // Remove redirects
+    for (const [Source, Destination] of Object.entries(redirects)) {
+      const url = `https://api.fastly.com/service/${config.serviceId}/dictionary/${config.dictionaryId}/item/${encodeURIComponent(Source)}`;
+
+      verbose(`Making DELETE request to: ${url}`);
+      verbose(`Headers: Fastly-Key: ${fastlyKey.substring(0, 8)}...${fastlyKey.substring(fastlyKey.length - 4)}`);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Fastly-Key': fastlyKey
+        }
+      });
+
+      verbose(`Response status: ${response.status} ${response.statusText}`);
+
+      if (!response.ok) {
+        verbose(`Warning: Could not remove redirect ${Source} (status: ${response.status})`, 'warn');
+      } else {
+        verbose(`Removed redirect: ${Source}`);
+      }
+    }
+
+    log('Dictionary items removed successfully');
+  } catch (error) {
+    log(`Failed to remove from dictionary: ${error.message}`, 'error');
+    throw error;
+  }
+}
+
 async function main() {
   try {
     let redirects;
@@ -184,7 +233,11 @@ async function main() {
       verbose(`  ${Source} -> ${Destination}`);
     }
 
-    await updateDictionary(redirects);
+    if (removeMode) {
+      await removeDictionary(redirects);
+    } else {
+      await updateDictionary(redirects);
+    }
   } catch (error) {
     log(`Fastly operation failed: ${error.message}`, 'error');
     process.exit(1);
