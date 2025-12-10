@@ -54,17 +54,8 @@ if (deadLinksOnly) {
   processor = processor
     .use(remarkLintNoDeadUrls, {
         deadOrAliveOptions: {
-            //maxRetries: 0, // Disable retries
-            //sleep: 0, // Disable sleep
-            retry: {
-                limit: 2, // Retry failed requests
-            },
-            timeout: {
-                request: 15000, // Increase timeout to 15 seconds
-            },
-            headers: {
-                'user-agent': 'Mozilla/5.0 (compatible; LinkChecker/1.0)', // Add user agent
-            },
+            maxRetries: 0, // Disable retries
+            sleep: 0, // Disable sleep
             https: {
                 rejectUnauthorized: false, // Don't fail on SSL cert issues
             },
@@ -94,17 +85,8 @@ if (deadLinksOnly) {
     processor = processor
       .use(remarkLintNoDeadUrls, {
           deadOrAliveOptions: {
-              //maxRetries: 0, // Disable retries
-              //sleep: 0, // Disable sleep
-              retry: {
-                  limit: 2, // Retry failed requests
-              },
-              timeout: {
-                  request: 15000, // Increase timeout to 15 seconds
-              },
-              headers: {
-                  'user-agent': 'Mozilla/5.0 (compatible; LinkChecker/1.0)', // Add user agent
-              },
+              maxRetries: 0, // Disable retries
+              sleep: 0, // Disable sleep
               https: {
                   rejectUnauthorized: false, // Don't fail on SSL cert issues
               },
