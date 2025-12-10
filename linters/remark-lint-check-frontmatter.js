@@ -93,8 +93,6 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
             'remark-lint:check-frontmatter'
           )
         }
-      } else {
-        console.log(`  ✅ Found title: "${title}"`)
       }
 
       // Check if description exists and is not empty
@@ -123,8 +121,6 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
             'remark-lint:check-frontmatter'
           )
         }
-      } else {
-        console.log(`  ✅ Found description: "${description}"`)
       }
 
       // Additional validation: check title length
@@ -190,9 +186,6 @@ const remarkLintCheckFrontmatter = (severity = 'warning') => {
         'remark-lint:check-frontmatter'
       )
     }
-
-    console.log('✅ Frontmatter validation complete!')
-  }
 }
 
 export default remarkLintCheckFrontmatter
