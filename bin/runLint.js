@@ -23,7 +23,7 @@ const targetDir = process.cwd();
 
 // Check for flags
 const deadLinksOnly = process.argv.includes('--dead-links-only');
-const skipDeadLinks = process.argv.includes('--skip-dead-links') || process.argv.includes('--no-dead-links');
+const skipDeadLinks = process.argv.includes('--skip-dead-links');
 
 logSection('TEST LINT');
 if (deadLinksOnly) {
