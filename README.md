@@ -227,8 +227,8 @@ node bin/redirectChecker.js prod --verbose
 ```
 
 The script will test each redirect from `redirects.json` and report:
-- ✓ Successful redirects that return 200
-- ✗ Failed redirects with error details
+- ✓ Successful redirects that return 200 AND match the expected destination
+- ✗ Failed redirects with error details (including destination mismatches)
 - A summary of total tested, successful, and failed redirects
 
 ## Deployment

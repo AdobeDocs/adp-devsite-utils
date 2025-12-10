@@ -64,9 +64,11 @@ function loadRedirectsFromFile() {
 // Check a single redirect
 async function checkRedirect(source, expectedDestination) {
   const url = `https://${host}${source}`;
+  const expectedFullUrl = `https://${host}${expectedDestination}`;
   
   try {
     verbose(`Testing: ${url}`);
+    verbose(`  Expected Destination: ${expectedFullUrl}`);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -82,22 +84,34 @@ async function checkRedirect(source, expectedDestination) {
     verbose(`  Final URL: ${finalUrl}`);
     verbose(`  Status: ${status}`);
     
+    // Check if status is 200 AND the final URL matches the expected destination
+    const destinationMatches = finalUrl === expectedFullUrl;
+    const isSuccess = status === 200 && destinationMatches;
+    
+    if (!destinationMatches) {
+      verbose(`  ⚠ Destination mismatch!`, 'warn');
+    }
+    
     return {
       source,
       expectedDestination,
+      expectedFullUrl,
       url,
       finalUrl,
       status,
-      success: status === 200
+      destinationMatches,
+      success: isSuccess
     };
   } catch (error) {
     verbose(`  Error: ${error.message}`);
     return {
       source,
       expectedDestination,
+      expectedFullUrl,
       url,
       finalUrl: null,
       status: null,
+      destinationMatches: false,
       success: false,
       error: error.message
     };
@@ -134,6 +148,8 @@ async function main() {
         failureCount++;
         if (result.error) {
           log(`✗ [${i + 1}/${redirects.length}] ${result.source} → ERROR: ${result.error}`, 'error');
+        } else if (!result.destinationMatches && result.status === 200) {
+          log(`✗ [${i + 1}/${redirects.length}] ${result.source} → ${result.status} (wrong destination)`, 'error');
         } else {
           log(`✗ [${i + 1}/${redirects.length}] ${result.source} → ${result.status}`, 'error');
         }
@@ -149,7 +165,7 @@ async function main() {
     console.log(''); // Empty line for readability
     logSection('SUMMARY');
     log(`Total redirects tested: ${redirects.length}`);
-    log(`✓ Successful (200): ${successCount}`, successCount === redirects.length ? 'info' : 'warn');
+    log(`✓ Successful (200 + correct destination): ${successCount}`, successCount === redirects.length ? 'info' : 'warn');
     log(`✗ Failed: ${failureCount}`, failureCount > 0 ? 'error' : 'info');
     
     // Show failed redirects details
@@ -161,12 +177,16 @@ async function main() {
         .forEach(result => {
           log(`Source: ${result.source}`, 'error');
           log(`  Expected Destination: ${result.expectedDestination}`, 'error');
+          log(`  Expected Full URL: ${result.expectedFullUrl}`, 'error');
           log(`  URL Tested: ${result.url}`, 'error');
           if (result.error) {
             log(`  Error: ${result.error}`, 'error');
           } else {
             log(`  Final URL: ${result.finalUrl}`, 'error');
             log(`  Status: ${result.status}`, 'error');
+            if (!result.destinationMatches) {
+              log(`  ⚠ Destination does not match expected!`, 'error');
+            }
           }
           console.log(''); // Empty line between failures
         });
