@@ -133,9 +133,9 @@ function buildSideNavRecursively(sideNav, depth, verbose) {
     let sideNavMarkdown = '';
 
     for (var k in sideNav) {
-        let header = sideNav[k].header ? 'header' : ''; 
+        let header = sideNav[k].header ? 'header' : '';
         let resolvedPath = resolvePathToMarkdown(sideNav[k].path, verbose);
-        sideNavMarkdown += `${insertSpace(depth)}- [${sideNav[k].title}](${resolvedPath})${header}\n`;
+        sideNavMarkdown += header ? `${insertSpace(depth)}- [${sideNav[k].title}]${header}\n` : `${insertSpace(depth)}- [${sideNav[k].title}](${resolvedPath})${header}\n`;
         verbose(`    Side nav item: ${sideNav[k].title} (depth ${depth})${header ? ' [HEADER]' : ''} -> ${resolvedPath}`);
 
         if (sideNav[k].pages) {
@@ -159,24 +159,24 @@ function resolvePathToMarkdown(urlPath, verbose) {
 
     // Remove leading slash and convert to file system path
     const relativePath = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
-    
+
     // Check if index.md exists in the directory
     const indexPath = path.join(__dirname, 'src/pages', relativePath, 'index.md');
-    
+
     if (fs.existsSync(indexPath)) {
         verbose(`      Found index.md for ${urlPath} -> ${urlPath}index.md`);
         return `${urlPath}index.md`;
     }
-    
+
     // No index.md, so convert directory path to file path
     const pathWithoutSlash = urlPath.slice(0, -1);
     const filePath = path.join(__dirname, 'src/pages', relativePath.slice(0, -1) + '.md');
-    
+
     if (fs.existsSync(filePath)) {
         verbose(`      Found file for ${urlPath} -> ${pathWithoutSlash}.md`);
         return `${pathWithoutSlash}.md`;
     }
-    
+
     // File doesn't exist yet, but assume it will be the .md file
     verbose(`      No file found for ${urlPath}, assuming ${pathWithoutSlash}.md`);
     return `${pathWithoutSlash}.md`;
@@ -191,10 +191,10 @@ function insertSpace(indentLevel) {
 }
 
 // src/pages/topNav.md
-// src/pages/sideNav.md 
+// src/pages/sideNav.md
 // src/pages/get-started/sideNav.md
 
-// go through each subPages and find each path that relates to a subfolder 
+// go through each subPages and find each path that relates to a subfolder
 
 
 // title with path only
