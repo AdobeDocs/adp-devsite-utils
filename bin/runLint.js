@@ -77,8 +77,8 @@ if (deadLinksOnly) {
     .use(remarkLintNoBrInTables.default, ['error'])
     .use(remarkLintCheckFrontmatter.default)
     .use(remarkLintSelfCloseComponent.default, ['error'])
-    .use(remarkLintNoHtmlTag.default)
-    .use(remarkLintNoCodeTable.default);
+    .use(remarkLintNoHtmlTag.default, ['error'])
+    .use(remarkLintNoCodeTable.default, ['error']);
 
   // Add dead links check unless explicitly skipped
   if (!skipDeadLinks) {
