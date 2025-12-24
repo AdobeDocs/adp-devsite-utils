@@ -43,6 +43,7 @@ const remarkLintNoHtmlTag = await import(path.join(adpDevsiteUtilsDir, 'linters'
 const remarkLintNoCodeTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-in-table.js'));
 const remarkLintNoHtmlComments = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-html-comments.js'));
 const remarkLintNoBrInTables = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-br-in-tables.js'))
+const remarkLintNoUnescapedOpeningCurlyBraces = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-unescaped-opening-curly-braces.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
@@ -78,7 +79,8 @@ if (deadLinksOnly) {
     .use(remarkLintCheckFrontmatter.default)
     .use(remarkLintSelfCloseComponent.default, ['error'])
     .use(remarkLintNoHtmlTag.default, ['error'])
-    .use(remarkLintNoCodeTable.default, ['error']);
+    .use(remarkLintNoCodeTable.default, ['error'])
+    .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error']);
 
   // Add dead links check unless explicitly skipped
   if (!skipDeadLinks) {
