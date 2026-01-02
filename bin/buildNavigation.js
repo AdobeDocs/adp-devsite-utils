@@ -97,8 +97,9 @@ try {
             verbose(`    Menu with ${navItem.menu?.length || 0} sub-items`);
             navItem.menu?.forEach((menuItem, menuIndex) =>{
                 let resolvedMenuPath = resolvePathToMarkdown(menuItem.path, verbose);
-                topNavMarkdown += `        - [${menuItem.title}](${resolvedMenuPath})\n`;
-                verbose(`      Sub-item ${menuIndex + 1}: ${menuItem.title} -> ${menuItem.path} -> ${resolvedMenuPath}`);
+                let descriptionText = menuItem.description ? ` - ${menuItem.description}` : '';
+                topNavMarkdown += `        - [${menuItem.title}](${resolvedMenuPath})${descriptionText}\n`;
+                verbose(`      Sub-item ${menuIndex + 1}: ${menuItem.title} -> ${menuItem.path} -> ${resolvedMenuPath}${menuItem.description ? ` (${menuItem.description})` : ''}`);
             });
         }
     });
