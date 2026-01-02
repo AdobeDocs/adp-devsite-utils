@@ -21,6 +21,23 @@ const adpDevsiteUtilsDir = path.dirname(__dirname);
 // Get the current working directory (target repo where the command is run)
 const targetDir = process.cwd();
 
+// Read lint configuration from content repo's package.json
+let skipUrlPatterns = [];
+const packageJsonPath = path.join(targetDir, 'package.json');
+if (fs.existsSync(packageJsonPath)) {
+    try {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        skipUrlPatterns = packageJson?.lint?.skipUrlPatterns || [];
+        
+        if (skipUrlPatterns.length > 0) {
+            logStep(`Skipping ${skipUrlPatterns.length} URL pattern(s):`);
+            skipUrlPatterns.forEach(pattern => verbose(`  - ${pattern}`));
+        }
+    } catch (error) {
+        log(`Failed to parse package.json: ${error.message}`, 'warn');
+    }
+}
+
 // Check for flags
 const deadLinksOnly = process.argv.includes('--dead-links-only');
 const skipDeadLinks = process.argv.includes('--skip-dead-links');
@@ -55,6 +72,7 @@ if (deadLinksOnly) {
   // Only check for dead URLs
   processor = processor
     .use(remarkLintNoDeadUrls, {
+        skipUrlPatterns,
         deadOrAliveOptions: {
             maxRetries: 0, // Disable retries
             sleep: 0, // Disable sleep
@@ -88,6 +106,7 @@ if (deadLinksOnly) {
   if (!skipDeadLinks) {
     processor = processor
       .use(remarkLintNoDeadUrls, {
+          skipUrlPatterns,
           deadOrAliveOptions: {
               maxRetries: 0, // Disable retries
               sleep: 0, // Disable sleep
