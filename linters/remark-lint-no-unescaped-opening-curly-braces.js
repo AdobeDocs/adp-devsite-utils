@@ -2,50 +2,51 @@ import { visit } from 'unist-util-visit'
 
 const remarkLintNoUnescapedCurlyBraces = (severity = 'warning') => {
   return (tree, file) => {
-    // Handle both array format [severity] and direct severity string
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
-
     const source = file.toString()
 
-    // Visit only 'text' nodes - this automatically excludes:
-    // - inline code (single backtick fenced preformatted code)
-    // - code (triple backtick fenced preformatted code)
     visit(tree, 'text', (node) => {
-      const content = node.value
+      const { start, end } = node.position
+      
+      // We must look at the "raw" source for this node to see backslashes correctly
+      const nodeSource = source.slice(start.offset, end.offset)
 
-      // Find all opening curly braces in the text
-      let index = 0
-      while ((index = content.indexOf('{', index)) !== -1) {
-        // Calculate the position in the original source
-        const sourceOffset = node.position.start.offset + index
+      for (let i = 0; i < nodeSource.length; i++) {
+        if (nodeSource[i] === '{') {
+          
+          // Count how many backslashes are immediately before this '{'
+          let backslashCount = 0
+          let lookupIndex = i - 1
+          while (lookupIndex >= 0 && nodeSource[lookupIndex] === '\\') {
+            backslashCount++
+            lookupIndex--
+          }
 
-        // Check if the curly brace is escaped
-        // When remark parses \{, the position points to the \, not the {
-        const isEscaped = source[sourceOffset] === '\\'
+          // If backslashCount is even (0, 2, 4...), the brace is UNESCAPED.
+          // If backslashCount is odd (1, 3, 5...), the brace is ESCAPED.
+          const isUnescaped = (backslashCount % 2 === 0)
 
-        if (!isEscaped) {
-          // Calculate line and column for the error position
-          const position = {
-            start: {
-              line: node.position.start.line,
-              column: node.position.start.column + index
-            },
-            end: {
-              line: node.position.start.line,
-              column: node.position.start.column + index + 1
+          if (isUnescaped) {
+            const position = {
+              start: {
+                line: start.line,
+                column: start.column + i
+              },
+              end: {
+                line: start.line,
+                column: start.column + i + 1
+              }
+            }
+
+            const message = `Unescaped opening curly brace "{" found. Use "\\{" to escape it.`
+
+            if (actualSeverity === 'error') {
+              file.fail(message, position, 'remark-lint:no-unescaped-curly-braces')
+            } else {
+              file.message(message, position, 'remark-lint:no-unescaped-curly-braces')
             }
           }
-
-          const message = `Unescaped opening curly brace "{" found. Use "\\{" to escape it.`
-
-          if (actualSeverity === 'error') {
-            file.fail(message, position, 'remark-lint:no-unescaped-curly-braces')
-          } else {
-            file.message(message, position, 'remark-lint:no-unescaped-curly-braces')
-          }
         }
-
-        index++
       }
     })
   }
