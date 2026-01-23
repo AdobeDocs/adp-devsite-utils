@@ -156,7 +156,7 @@ function buildSideNavRecursively(sideNav, depth, verbose) {
  * - If path doesn't end with /, returns as-is
  */
 function resolvePathToMarkdown(urlPath, verbose) {
-    if (!urlPath || !urlPath.endsWith('/')) {
+    if (!urlPath) {
         return urlPath;
     }
 
