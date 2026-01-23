@@ -160,9 +160,14 @@ function resolvePathToMarkdown(urlPath, verbose) {
         return urlPath;
     }
 
+    // If path already ends with .md, return as-is
+    if (urlPath.endsWith('.md')) {
+        return urlPath;
+    }
+
     // Remove leading slash and convert to file system path
     const relativePath = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
-    const endsWithSlash = relativePath.endsWith('/');
+    const endsWithSlash = urlPath.endsWith('/');
 
     // Check if index.md exists in the directory
     const indexPath = path.join(__dirname, 'src/pages', relativePath, 'index.md');
@@ -174,8 +179,9 @@ function resolvePathToMarkdown(urlPath, verbose) {
     }
 
     // No index.md, so convert directory path to file path
-    const pathWithoutSlash = urlPath.slice(0, -1);
-    const filePath = path.join(__dirname, 'src/pages', relativePath.slice(0, -1) + '.md');
+    const pathWithoutSlash = endsWithSlash ? urlPath.slice(0, -1) : urlPath;
+    const fileRelativePath = endsWithSlash ? relativePath.slice(0, -1) : relativePath;
+    const filePath = path.join(__dirname, 'src/pages', fileRelativePath + '.md');
 
     if (fs.existsSync(filePath)) {
         verbose(`      Found file for ${urlPath} -> ${pathWithoutSlash}.md`);
