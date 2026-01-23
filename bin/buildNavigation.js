@@ -134,13 +134,16 @@ function buildSideNavRecursively(sideNav, depth, verbose) {
     let sideNavMarkdown = '';
 
     for (var k in sideNav) {
+        let header = sideNav[k].header ? ' - header' : ''; 
         let resolvedPath = resolvePathToMarkdown(sideNav[k].path, verbose);
-        sideNavMarkdown += `${insertSpace(depth)}- [${sideNav[k].title}](${resolvedPath})\n`;
+        sideNavMarkdown += header ? `${insertSpace(depth)}- ${sideNav[k].title}${header}\n` : `${insertSpace(depth)}- [${sideNav[k].title}](${resolvedPath})\n`;
         verbose(`    Side nav item: ${sideNav[k].title} (depth ${depth}) -> ${resolvedPath}`);
 
         if (sideNav[k].pages) {
             verbose(`    Processing ${Object.keys(sideNav[k].pages).length} sub-pages for ${sideNav[k].title}`);
-            sideNavMarkdown += buildSideNavRecursively(sideNav[k].pages, depth + 1, verbose);
+            // If it's a header, don't add indent level for sub-pages
+            let nextDepth = header ? depth : depth + 1;
+            sideNavMarkdown += buildSideNavRecursively(sideNav[k].pages, nextDepth, verbose);
         }
     }
     return sideNavMarkdown;
