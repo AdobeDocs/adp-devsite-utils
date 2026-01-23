@@ -162,13 +162,15 @@ function resolvePathToMarkdown(urlPath, verbose) {
 
     // Remove leading slash and convert to file system path
     const relativePath = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
+    const endsWithSlash = relativePath.endsWith('/');
 
     // Check if index.md exists in the directory
     const indexPath = path.join(__dirname, 'src/pages', relativePath, 'index.md');
 
     if (fs.existsSync(indexPath)) {
-        verbose(`      Found index.md for ${urlPath} -> ${urlPath}index.md`);
-        return `${urlPath}index.md`;
+        const indexSuffix = endsWithSlash ? 'index.md' : '/index.md';
+        verbose(`      Found index.md for ${urlPath} -> ${urlPath}${indexSuffix}`);
+        return `${urlPath}${indexSuffix}`;
     }
 
     // No index.md, so convert directory path to file path
