@@ -134,7 +134,7 @@ function buildSideNavRecursively(sideNav, depth, verbose) {
     let sideNavMarkdown = '';
 
     for (var k in sideNav) {
-        let header = sideNav[k].header ? ' - header' : ''; 
+        let header = sideNav[k].header ? ' header' : '';
         let resolvedPath = resolvePathToMarkdown(sideNav[k].path, verbose);
         sideNavMarkdown += header ? `${insertSpace(depth)}- ${sideNav[k].title}${header}\n` : `${insertSpace(depth)}- [${sideNav[k].title}](${resolvedPath})\n`;
         verbose(`    Side nav item: ${sideNav[k].title} (depth ${depth}) -> ${resolvedPath}`);
