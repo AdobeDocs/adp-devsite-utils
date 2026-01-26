@@ -42,7 +42,7 @@ const remarkLintNoBrInTables = (severity = 'warning') => {
             end: { line: lineNumber + 1, column: match.index + match[0].length + 1 }
           }
 
-          const message = `<br> tag found in table row. Use proper table structure with separate rows instead of line breaks within cells.`
+          const message = `<br> tag found in table row. Use \\<br/\\> within the table to be escaped.`
 
           if (actualSeverity === 'error') {
             file.fail(message, position, 'remark-lint:no-br-in-tables')
@@ -58,7 +58,7 @@ const remarkLintNoBrInTables = (severity = 'warning') => {
       visit(tableNode, 'tableCell', (cellNode) => {
         visit(cellNode, 'html', (htmlNode) => {
           const content = htmlNode.value
-          
+
           // Check for <br> tags in HTML nodes within table cells
           const brTagRegex = /<br\s*\/?>/gi
           let match
