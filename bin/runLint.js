@@ -104,7 +104,8 @@ if (deadLinksOnly) {
     .use(remarkLintNoHtmlTag.default, ['error'])
     .use(remarkLintNoCodeTable.default, ['error'])
     .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error'])
-    .use(remarkLintNoAltTextForImage.default, ['warning']);
+    .use(remarkLintNoAltTextForImage.default, ['warning'])
+    .use(remarkLintNoKebabInFilename.default, ['error']);
 
   // Add dead links check unless explicitly skipped
   if (!skipDeadLinks) {
@@ -170,8 +171,8 @@ for (const filePath of markdownFiles) {
 
         verbose(`Processing: ${relativePath}`);
 
-        // Process the file with remark
-        const result = await processor.process(content);
+        // Process the file with remark (pass path for linters that need filename access)
+        const result = await processor.process({ path: filePath, value: content });
 
         if (result.messages.length > 0) {
             filesWithIssues++;
