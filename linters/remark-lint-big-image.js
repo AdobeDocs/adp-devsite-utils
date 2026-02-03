@@ -16,16 +16,31 @@ const remarkLintBigImage = (severity = 'error') => {
       return // Cannot check file sizes without knowing the file path
     }
 
+    // Find the src/pages directory (site root) by walking up from the file directory
+    let siteRoot = fileDir
+    while (siteRoot && !siteRoot.endsWith('src/pages') && !siteRoot.endsWith('src\\pages')) {
+      const parent = path.dirname(siteRoot)
+      if (parent === siteRoot) break // Reached filesystem root
+      siteRoot = parent
+    }
+
     visit(tree, 'image', (node) => {
       const imageUrl = node.url
       
-      // Skip external URLs
+      // FIX ME: Skipped external URLs for now
       if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
         return
       }
 
-      // Resolve the image path relative to the markdown file
-      const imagePath = path.resolve(fileDir, imageUrl)
+      // Resolve the image path - handle both absolute (from site root) and relative paths
+      let imagePath
+      if (imageUrl.startsWith('/')) {
+        // Absolute path from site root (src/pages)
+        imagePath = path.join(siteRoot, imageUrl)
+      } else {
+        // Relative path from markdown file
+        imagePath = path.resolve(fileDir, imageUrl)
+      }
       
       try {
         if (fs.existsSync(imagePath)) {
@@ -43,7 +58,7 @@ const remarkLintBigImage = (severity = 'error') => {
           }
         }
       } catch (error) {
-        // Silently ignore file access errors
+        // Ignore file access errors
       }
     })
   }
