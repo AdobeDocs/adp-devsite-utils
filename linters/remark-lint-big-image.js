@@ -42,23 +42,25 @@ const remarkLintBigImage = (severity = 'error') => {
         imagePath = path.resolve(fileDir, imageUrl)
       }
       
+      let fileStats = null
       try {
         if (fs.existsSync(imagePath)) {
-          const stats = fs.statSync(imagePath)
-          const sizeMB = stats.size / (1024 * 1024)
-          
-          if (stats.size >= MAX_SIZE_BYTES) {
-            const message = `Image file is too large: ${imageUrl} (${sizeMB.toFixed(2)} MB >= ${MAX_SIZE_MB} MB)`
-            
-            if (actualSeverity === 'error') {
-              file.fail(message, node.position, 'remark-lint:big-image')
-            } else {
-              file.message(message, node.position, 'remark-lint:big-image')
-            }
-          }
+          fileStats = fs.statSync(imagePath)
         }
       } catch (error) {
-        // Ignore file access errors
+        // Ignore file access errors (file doesn't exist, permission issues, etc.)
+        return
+      }
+
+      if (fileStats && fileStats.size >= MAX_SIZE_BYTES) {
+        const sizeMB = fileStats.size / (1024 * 1024)
+        const message = `Image file is too large: ${imageUrl} (${sizeMB.toFixed(2)} MB >= ${MAX_SIZE_MB} MB)`
+        
+        if (actualSeverity === 'error') {
+          file.fail(message, node.position, 'remark-lint:big-image')
+        } else {
+          file.message(message, node.position, 'remark-lint:big-image')
+        }
       }
     })
   }
