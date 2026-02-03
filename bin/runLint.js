@@ -64,6 +64,7 @@ const remarkLintNoBlockInList = await import(path.join(adpDevsiteUtilsDir, 'lint
 const remarkLintNoUnescapedOpeningCurlyBraces = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-unescaped-opening-curly-braces.js'))
 const remarkLintNoAltTextForImage = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-alt-text-for-image.js'))
 const remarkLintBigImage = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-big-image.js'))
+const remarkLintNoKebabInFilename = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-kebab-in-filename.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
@@ -104,7 +105,7 @@ if (deadLinksOnly) {
     .use(remarkLintNoCodeTable.default, ['error'])
     .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error'])
     .use(remarkLintNoAltTextForImage.default, ['warning'])
-    .use(remarkLintBigImage.default, ['error']);
+    .use(remarkLintNoKebabInFilename.default, ['error']);
 
   // Add dead links check unless explicitly skipped
   if (!skipDeadLinks) {
@@ -170,8 +171,8 @@ for (const filePath of markdownFiles) {
 
         verbose(`Processing: ${relativePath}`);
 
-        // Process the file with remark (pass file path for linters that need it)
-        const result = await processor.process({ value: content, path: filePath });
+        // Process the file with remark (pass path for linters that need filename access)
+        const result = await processor.process({ path: filePath, value: content });
 
         if (result.messages.length > 0) {
             filesWithIssues++;
