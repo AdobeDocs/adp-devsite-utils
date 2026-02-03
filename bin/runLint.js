@@ -102,7 +102,9 @@ if (deadLinksOnly) {
     .use(remarkLintSelfCloseComponent.default, ['error'])
     .use(remarkLintNoHtmlTag.default, ['error'])
     .use(remarkLintNoCodeTable.default, ['error'])
-    .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error']);
+    .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error'])
+    .use(remarkLintNoAltTextForImage.default, ['warning'])
+    .use(remarkLintBigImage.default, ['error']);
 
   // Add dead links check unless explicitly skipped
   if (!skipDeadLinks) {
