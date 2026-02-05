@@ -13,6 +13,12 @@ import fs from 'node:fs';
 
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
 
+// Report collection for linter-report.txt
+const reportLines = [];
+function addToReport(message) {
+    reportLines.push(message);
+}
+
 // Get the directory where this script is located (adp-devsite-utils repo)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,13 +49,29 @@ const deadLinksOnly = process.argv.includes('--dead-links-only');
 const skipDeadLinks = process.argv.includes('--skip-dead-links');
 
 logSection('TEST LINT');
+
+// Determine lint mode for report
+let lintMode = 'Full Linting (all rules + dead links check)';
 if (deadLinksOnly) {
     logStep('Testing dead links only');
+    lintMode = 'Dead Links Only';
 } else if (skipDeadLinks) {
     logStep('Testing remark rules (skipping dead links check)');
+    lintMode = 'Remark Rules Only (dead links skipped)';
 } else {
     logStep('Testing remark rules with JavaScript API');
 }
+
+// Add report header
+addToReport('═══════════════════════════════════════════════════════════════');
+addToReport('                     LINTER REPORT');
+addToReport('═══════════════════════════════════════════════════════════════');
+addToReport('');
+addToReport(`Generated: ${new Date().toISOString()}`);
+addToReport(`Mode: ${lintMode}`);
+addToReport(`Target Directory: ${targetDir}`);
+addToReport('');
+addToReport('───────────────────────────────────────────────────────────────');
 
 // Import the custom linter plugins
 const remarkLintCheckFrontmatter = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-check-frontmatter.js'));
@@ -158,11 +180,16 @@ if (markdownFiles.length === 0) {
 }
 
 verbose(`Found ${markdownFiles.length} markdown files to test`);
+addToReport('');
+addToReport(`Files to process: ${markdownFiles.length}`);
+addToReport('');
 
 // Process each file
 let totalIssues = 0;
 let filesWithIssues = 0;
 let hasFatalErrors = false;
+let totalErrors = 0;
+let totalWarnings = 0;
 
 for (const filePath of markdownFiles) {
     try {
@@ -178,19 +205,35 @@ for (const filePath of markdownFiles) {
             filesWithIssues++;
             totalIssues += result.messages.length;
             verbose(`\n${relativePath}:`);
+            
+            // Add file header to report
+            addToReport('───────────────────────────────────────────────────────────────');
+            addToReport(`📄 FILE: ${relativePath}`);
+            addToReport('───────────────────────────────────────────────────────────────');
 
             // Display all messages for this file
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
                 verbose(` ${severity} ${message}`);
-
+                
+                // Track error/warning counts
                 if (message.fatal) {
                     hasFatalErrors = true;
+                    totalErrors++;
+                } else {
+                    totalWarnings++;
                 }
 
+                // Add to report with detailed formatting
+                const location = message.line ? `Line ${message.line}${message.column ? `:${message.column}` : ''}` : 'N/A';
+                addToReport(`  ${severity}`);
+                addToReport(`    Location: ${location}`);
+                addToReport(`    Message: ${message.message || message}`);
                 if (message.ruleId) {
+                    addToReport(`    Rule: ${message.ruleId}`);
                     verbose(`    Rule: ${message.ruleId}`);
                 }
+                addToReport('');
             });
         } else {
             verbose(`✅ ${relativePath}: No issues found`);
@@ -199,7 +242,17 @@ for (const filePath of markdownFiles) {
     } catch (error) {
         log(`❌ Error processing ${filePath}: ${error}`, 'error');
         totalIssues++;
+        totalErrors++;
         hasFatalErrors = true;
+        
+        // Add processing error to report
+        const relativePath = path.relative(targetDir, filePath);
+        addToReport('───────────────────────────────────────────────────────────────');
+        addToReport(`📄 FILE: ${relativePath}`);
+        addToReport('───────────────────────────────────────────────────────────────');
+        addToReport(`  ❌ ERROR`);
+        addToReport(`    Message: Failed to process file - ${error.message || error}`);
+        addToReport('');
     }
 }
 
@@ -208,6 +261,43 @@ log(`\n📊 Linting Summary:`);
 log(`   Files processed: ${markdownFiles.length}`);
 log(`   Files with issues: ${filesWithIssues}`);
 log(`   Total issues: ${totalIssues}`);
+
+// Add summary to report
+addToReport('');
+addToReport('═══════════════════════════════════════════════════════════════');
+addToReport('                        SUMMARY');
+addToReport('═══════════════════════════════════════════════════════════════');
+addToReport('');
+addToReport(`  📁 Files processed:    ${markdownFiles.length}`);
+addToReport(`  📄 Files with issues:  ${filesWithIssues}`);
+addToReport(`  ❌ Total errors:       ${totalErrors}`);
+addToReport(`  ⚠️  Total warnings:     ${totalWarnings}`);
+addToReport(`  📋 Total issues:       ${totalIssues}`);
+addToReport('');
+
+let exitStatus;
+if (hasFatalErrors) {
+    addToReport('Result: ❌ FAILED - Fatal errors found');
+    exitStatus = 1;
+} else if (totalIssues > 0) {
+    addToReport('Result: ⚠️  PASSED WITH WARNINGS - No fatal errors');
+    exitStatus = 0;
+} else {
+    addToReport('Result: ✅ PASSED - All files passed linting successfully!');
+    exitStatus = 0;
+}
+
+addToReport('');
+addToReport('═══════════════════════════════════════════════════════════════');
+
+// Write report to file
+const reportPath = path.join(targetDir, 'linter-report.txt');
+try {
+    fs.writeFileSync(reportPath, reportLines.join('\n'), 'utf8');
+    log(`📝 Linter report written to: ${reportPath}`);
+} catch (writeError) {
+    log(`⚠️  Failed to write linter report: ${writeError.message}`, 'warn');
+}
 
 if (hasFatalErrors) {
     log('❌ Fatal errors found. Exiting with code 1.', 'error');
