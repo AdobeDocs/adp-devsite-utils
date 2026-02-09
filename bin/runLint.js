@@ -23,19 +23,32 @@ const targetDir = process.cwd();
 
 // Read lint configuration from content repo's package.json
 let skipUrlPatterns = [];
+let skipFrontmatterPaths = [];
 const packageJsonPath = path.join(targetDir, 'package.json');
 if (fs.existsSync(packageJsonPath)) {
     try {
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         skipUrlPatterns = packageJson?.lint?.skipUrlPatterns || [];
+        skipFrontmatterPaths = packageJson?.lint?.skipFrontmatterPaths || [];
         
         if (skipUrlPatterns.length > 0) {
             logStep(`Skipping ${skipUrlPatterns.length} URL pattern(s):`);
             skipUrlPatterns.forEach(pattern => verbose(`  - ${pattern}`));
         }
+        
+        if (skipFrontmatterPaths.length > 0) {
+            logStep(`Skipping frontmatter check for ${skipFrontmatterPaths.length} path(s):`);
+            skipFrontmatterPaths.forEach(pattern => verbose(`  - ${pattern}`));
+        }
     } catch (error) {
         log(`Failed to parse package.json: ${error.message}`, 'warn');
     }
+}
+
+// Helper function to check if a file should skip frontmatter check
+function shouldSkipFrontmatter(filePath) {
+    const relativePath = path.relative(targetDir, filePath);
+    return skipFrontmatterPaths.some(pattern => relativePath.startsWith(pattern));
 }
 
 // Check for flags
@@ -69,47 +82,13 @@ const remarkLintNoKebabInFilename = await import(path.join(adpDevsiteUtilsDir, '
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
 // Create remark processor with plugins
-let processor = remark().use(remarkFrontmatter, ['yaml']);
+// Two processors: one with frontmatter check and one without
+function createProcessor(includeFrontmatterCheck) {
+  let processors = remark().use(remarkFrontmatter, ['yaml']);
 
-if (deadLinksOnly) {
-  // Only check for dead URLs
-  processor = processor
-    .use(remarkLintNoDeadUrls, {
-        skipUrlPatterns,
-        deadOrAliveOptions: {
-            maxRetries: 0, // Disable retries
-            sleep: 0, // Disable sleep
-            https: {
-                rejectUnauthorized: false, // Don't fail on SSL cert issues
-            },
-            followRedirect: true, // Allow redirects (don't treat as dead links)
-        },
-    });
-} else {
-  // Run all linting rules (optionally skipping dead links)
-  processor = processor
-    .use(remarkValidateLinks, {
-      skipPathPatterns: [/.*config\.md.*/],
-      root: srcPagesDir
-    })
-    .use(remarkLintNoMultipleToplevelHeadings)
-    .use(remarkGfm)
-    .use(remarkLintNoHiddenTableCell, ['error'])
-    .use(remarkLintNoAngleBrackets.default, ['error'])
-    .use(remarkLintNoHtmlComments.default, ['error'])
-    .use(remarkLintNoBrInTables.default, ['error'])
-    .use(remarkLintNoBlockInList.default, ['error'])
-    .use(remarkLintCheckFrontmatter.default)
-    .use(remarkLintSelfCloseComponent.default, ['error'])
-    .use(remarkLintNoHtmlTag.default, ['error'])
-    .use(remarkLintNoCodeTable.default, ['error'])
-    .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error'])
-    .use(remarkLintNoAltTextForImage.default, ['warning'])
-    .use(remarkLintNoKebabInFilename.default, ['error']);
-
-  // Add dead links check unless explicitly skipped
-  if (!skipDeadLinks) {
-    processor = processor
+  if (deadLinksOnly) {
+    // Only check for dead URLs
+    processors = processors
       .use(remarkLintNoDeadUrls, {
           skipUrlPatterns,
           deadOrAliveOptions: {
@@ -121,8 +100,57 @@ if (deadLinksOnly) {
               followRedirect: true, // Allow redirects (don't treat as dead links)
           },
       });
+  } else {
+    // Run all linting rules (optionally skipping dead links)
+    processors = processors
+      .use(remarkValidateLinks, {
+        skipPathPatterns: [/.*config\.md.*/],
+        root: srcPagesDir
+      })
+      .use(remarkLintNoMultipleToplevelHeadings)
+      .use(remarkGfm)
+      .use(remarkLintNoHiddenTableCell, ['error'])
+      .use(remarkLintNoAngleBrackets.default, ['error'])
+      .use(remarkLintNoHtmlComments.default, ['error'])
+      .use(remarkLintNoBrInTables.default, ['error'])
+      .use(remarkLintNoBlockInList.default, ['error']);
+    
+    // Only add frontmatter check if not skipping
+    if (includeFrontmatterCheck) {
+      processors = processors.use(remarkLintCheckFrontmatter.default);
+    }
+    
+    processors = processors
+      .use(remarkLintSelfCloseComponent.default, ['error'])
+      .use(remarkLintNoHtmlTag.default, ['error'])
+      .use(remarkLintNoCodeTable.default, ['error'])
+      .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error'])
+      .use(remarkLintNoAltTextForImage.default, ['warning'])
+      .use(remarkLintNoKebabInFilename.default, ['error']);
+
+    // Add dead links check unless explicitly skipped
+    if (!skipDeadLinks) {
+      processors = processors
+        .use(remarkLintNoDeadUrls, {
+            skipUrlPatterns,
+            deadOrAliveOptions: {
+                maxRetries: 0, // Disable retries
+                sleep: 0, // Disable sleep
+                https: {
+                    rejectUnauthorized: false, // Don't fail on SSL cert issues
+                },
+                followRedirect: true, // Allow redirects (don't treat as dead links)
+            },
+        });
+    }
   }
+  
+  return processors;
 }
+
+// Create both processors
+const processorWithFrontmatter = createProcessor(true);
+const processorWithoutFrontmatter = createProcessor(false);
 
 if (!fs.existsSync(srcPagesDir)) {
     log('❌ src/pages directory not found', 'error');
@@ -169,7 +197,15 @@ for (const filePath of markdownFiles) {
         const content = fs.readFileSync(filePath, 'utf8');
         const relativePath = path.relative(targetDir, filePath);
 
-        verbose(`Processing: ${relativePath}`);
+        // Choose the appropriate processor based on whether frontmatter check should be skipped
+        const skipFrontmatter = shouldSkipFrontmatter(filePath);
+        const processor = skipFrontmatter ? processorWithoutFrontmatter : processorWithFrontmatter;
+        
+        if (skipFrontmatter) {
+            verbose(`Processing (skip frontmatter): ${relativePath}`);
+        } else {
+            verbose(`Processing: ${relativePath}`);
+        }
 
         // Process the file with remark (pass path for linters that need filename access)
         const result = await processor.process({ path: filePath, value: content });
