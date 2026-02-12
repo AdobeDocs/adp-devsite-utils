@@ -9,7 +9,6 @@ const {
     replaceLinksInFile,
     getFindPatternForMarkdownFiles: getFindPattern,
     getReplacePatternForMarkdownFiles: getReplacePattern,
-    removeFileExtension,
     log,
     verbose,
     logSection,
@@ -95,16 +94,13 @@ try {
                 to = to.replaceAll(path.sep, '/');
             }
 
-            // Add missing file extension if we can determine it unambiguously
-            const osPath = to.replaceAll('/', path.sep);
-            const potentialFileExtensions = relativeFiles
-                .filter((file) => removeFileExtension(file) === osPath)
-                .map((file) => path.extname(file));
-
-            if (potentialFileExtensions.length === 1) {
-                const ext = potentialFileExtensions[0];
-                if (!to.endsWith(ext)) {
-                    to = `${to}${ext}`;
+            // Resolve path to a specific file: prefer .md file, then directory/index.md
+            const hasExtension = path.extname(to) !== '';
+            if (!hasExtension) {
+                if (pathExists(`${to}.md`, relativeToDir, relativeFiles)) {
+                    to = `${to}.md`;
+                } else if (pathExists(`${to}/index.md`, relativeToDir, relativeFiles)) {
+                    to = `${to}/index.md`;
                 }
             }
 
