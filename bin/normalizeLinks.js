@@ -122,6 +122,7 @@ try {
             getFindPattern,
             getReplacePattern,
         });
+        return linkMap;
     }
 
     logStep('Getting deployable files');
@@ -131,10 +132,26 @@ try {
     logStep('Processing markdown files');
     const mdFiles = getMarkdownFiles(__dirname);
     verbose(`Processing ${mdFiles.length} markdown files`);
+    const allChanges = [];
     mdFiles.forEach((mdFile, index) => {
         verbose(`Processing markdown file ${index + 1}/${mdFiles.length}: ${mdFile}`);
-        normalizeLinksInMarkdownFile(mdFile, files);
+        const linkMap = normalizeLinksInMarkdownFile(mdFile, files);
+        if (linkMap.size > 0) {
+            allChanges.push({ file: mdFile, linkMap });
+        }
     });
+
+    if (allChanges.length > 0) {
+        log('\nLinks changed:');
+        allChanges.forEach(({ file, linkMap }) => {
+            log(`  ${file}`);
+            linkMap.forEach((to, from) => {
+                log(`    ${from} → ${to}`);
+            });
+        });
+    } else {
+        log('No links were changed.');
+    }
 
     verbose('Link normalization process completed successfully');
 } catch (err) {
