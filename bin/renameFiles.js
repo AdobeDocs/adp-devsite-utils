@@ -104,6 +104,7 @@ try {
 
             linkMap.set(fromRelFile, toRelFile);
         });
+        console.table(linkMap);
         return linkMap;
     }
 
