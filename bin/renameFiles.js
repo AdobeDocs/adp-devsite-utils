@@ -178,7 +178,7 @@ try {
         ];
 
         const file = getRedirectionsFilePath(__dirname);
-        const dir = path.dirname(file);
+        const dir = path.join(path.dirname(file), 'src', 'pages');
         const linkMap = getLinkMap(fileMap, dir);
         const newRedirects = [];
 
