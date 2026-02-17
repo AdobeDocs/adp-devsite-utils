@@ -9,7 +9,6 @@ const {
     replaceLinksInFile,
     getFindPatternForMarkdownFiles: getFindPattern,
     getReplacePatternForMarkdownFiles: getReplacePattern,
-    removeFileExtension,
     log,
     verbose,
     logSection,
@@ -95,16 +94,13 @@ try {
                 to = to.replaceAll(path.sep, '/');
             }
 
-            // Add missing file extension if we can determine it unambiguously
-            const osPath = to.replaceAll('/', path.sep);
-            const potentialFileExtensions = relativeFiles
-                .filter((file) => removeFileExtension(file) === osPath)
-                .map((file) => path.extname(file));
-
-            if (potentialFileExtensions.length === 1) {
-                const ext = potentialFileExtensions[0];
-                if (!to.endsWith(ext)) {
-                    to = `${to}${ext}`;
+            // Resolve path to a specific file: prefer .md file, then directory/index.md
+            const hasExtension = path.extname(to) !== '';
+            if (!hasExtension) {
+                if (pathExists(`${to}.md`, relativeToDir, relativeFiles)) {
+                    to = `${to}.md`;
+                } else if (pathExists(`${to}/index.md`, relativeToDir, relativeFiles)) {
+                    to = `${to}/index.md`;
                 }
             }
 
@@ -126,6 +122,7 @@ try {
             getFindPattern,
             getReplacePattern,
         });
+        return linkMap;
     }
 
     logStep('Getting deployable files');
@@ -135,10 +132,26 @@ try {
     logStep('Processing markdown files');
     const mdFiles = getMarkdownFiles(__dirname);
     verbose(`Processing ${mdFiles.length} markdown files`);
+    const allChanges = [];
     mdFiles.forEach((mdFile, index) => {
         verbose(`Processing markdown file ${index + 1}/${mdFiles.length}: ${mdFile}`);
-        normalizeLinksInMarkdownFile(mdFile, files);
+        const linkMap = normalizeLinksInMarkdownFile(mdFile, files);
+        if (linkMap.size > 0) {
+            allChanges.push({ file: mdFile, linkMap });
+        }
     });
+
+    if (allChanges.length > 0) {
+        log('\nLinks changed:');
+        allChanges.forEach(({ file, linkMap }) => {
+            log(`  ${file}`);
+            linkMap.forEach((to, from) => {
+                log(`    ${from} → ${to}`);
+            });
+        });
+    } else {
+        log('No links were changed.');
+    }
 
     verbose('Link normalization process completed successfully');
 } catch (err) {
