@@ -17,7 +17,7 @@ try {
   const siteMetadataEntries = [
     { key: 'contributors', file: 'src/pages/contributors.json' },
     { key: 'get-credentials', file: 'src/pages/credential/getcredential.json' },
-    { key: 'site-wide-banner', file: 'src/pages/sitewidebanner.json' },
+    { key: 'site-wide-banner', file: 'src/pages/site-wide-banner.json' },
   ];
 
   const data = siteMetadataEntries.map(({ key, file }) => {
