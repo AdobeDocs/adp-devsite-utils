@@ -15,10 +15,8 @@ try {
   logStep('Starting site metadata build process');
 
   const siteMetadataEntries = [
-    { key: 'config', file: 'src/pages/config.md' },
     { key: 'contributors', file: 'src/pages/contributors.json' },
     { key: 'get-credentials', file: 'src/pages/credential/getcredential.json' },
-    { key: 'redirects', file: 'redirects.json' },
     { key: 'site-wide-banner', file: 'src/pages/sitewidebanner.json' },
   ];
 
