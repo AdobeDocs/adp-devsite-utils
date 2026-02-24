@@ -2,12 +2,10 @@
 // serve static on 3001
 
 import express from 'express';
-import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = process.cwd();
 
 const PORT = process.env.DEV_PORT || 3003;
 
