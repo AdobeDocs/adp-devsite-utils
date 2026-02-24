@@ -24,14 +24,11 @@ const remarkLintInternalLinkExtension = (severity = 'warning') => {
 
       if (!urlPath) return
 
-      // Skip links to non-page assets (images, PDFs, zips, etc.)
-      const assetExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.pdf', '.zip', '.json']
-      if (assetExtensions.some((ext) => urlPath.toLowerCase().endsWith(ext))) {
-        return
-      }
+      // Only flag links that look like they should point to a .md page
+      const ext = urlPath.match(/\.([^./]+)$/)
+      if (ext && ext[1] !== 'md') return
 
       if (!urlPath.endsWith('.md')) {
-        const linkText = node.children?.map((c) => c.value).join('') || ''
         const position = node.position
 
         const message = `Internal link "${url}" must end with .md. Run "npm run normalizeLinks" to fix automatically, or manually change to "${urlPath.replace(/\/$/, '')}/index.md${url.includes('#') ? '#' + url.split('#')[1] : ''}" or "${urlPath.replace(/\/$/, '')}.md${url.includes('#') ? '#' + url.split('#')[1] : ''}".`
