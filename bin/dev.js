@@ -18,8 +18,18 @@ const getCurrentBranch = () => {
   }
 };
 
+const buildSiteMetadata = () => {
+  try {
+    execSync('npm run buildSiteMetadata', { cwd: __dirname, stdio: 'inherit' });
+  } catch (error) {
+    console.warn('Failed to build site metadata:', error.message);
+  }
+};
+
 const currentBranch = getCurrentBranch();
 const DOCS_DIRECTORY = process.env.DIRECTORY ||  './src/pages';
+
+buildSiteMetadata();
 
 const app = express();
 console.log(path.resolve(__dirname, `./${DOCS_DIRECTORY}`));
