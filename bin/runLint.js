@@ -100,6 +100,7 @@ const remarkLintNoUnescapedOpeningCurlyBraces = await import(path.join(adpDevsit
 const remarkLintNoAltTextForImage = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-alt-text-for-image.js'))
 const remarkLintBigImage = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-big-image.js'))
 const remarkLintNoKebabInFilename = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-kebab-in-filename.js'))
+const remarkLintInternalLinkExtension = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-internal-link-extension.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
@@ -148,7 +149,8 @@ function createProcessor(includeFrontmatterCheck) {
       .use(remarkLintNoCodeTable.default, ['error'])
       .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error'])
       .use(remarkLintNoAltTextForImage.default, ['warning'])
-      .use(remarkLintNoKebabInFilename.default, ['error']);
+      .use(remarkLintNoKebabInFilename.default, ['error'])
+      .use(remarkLintInternalLinkExtension.default, ['error']);
 
     // Add dead links check unless explicitly skipped
     if (!skipDeadLinks) {
