@@ -19,8 +19,11 @@ const remarkLintInternalLinkExtension = (severity = 'warning') => {
         return
       }
 
-      // Strip anchor fragment and query string for extension check
-      const urlPath = url.split('#')[0].split('?')[0]
+      // Anchor links are handled by remark-lint-anchor-link-extension
+      if (url.includes('#')) return
+
+      // Strip query string for extension check
+      const urlPath = url.split('?')[0]
 
       if (!urlPath) return
 
