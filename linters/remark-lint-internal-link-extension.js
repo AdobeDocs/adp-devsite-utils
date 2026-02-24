@@ -34,7 +34,7 @@ const remarkLintInternalLinkExtension = (severity = 'warning') => {
         const linkText = node.children?.map((c) => c.value).join('') || ''
         const position = node.position
 
-        const message = `Internal link "${url}" must end with .md. Use "${urlPath.replace(/\/$/, '')}/index.md${url.includes('#') ? '#' + url.split('#')[1] : ''}" or "${urlPath.replace(/\/$/, '')}.md${url.includes('#') ? '#' + url.split('#')[1] : ''}" instead.`
+        const message = `Internal link "${url}" must end with .md. Run "npm run normalizeLinks" to fix automatically, or manually change to "${urlPath.replace(/\/$/, '')}/index.md${url.includes('#') ? '#' + url.split('#')[1] : ''}" or "${urlPath.replace(/\/$/, '')}.md${url.includes('#') ? '#' + url.split('#')[1] : ''}".`
 
         if (actualSeverity === 'error') {
           file.fail(message, position, 'remark-lint:internal-link-extension')
