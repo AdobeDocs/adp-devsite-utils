@@ -33,8 +33,11 @@ const remarkLintInternalLinkExtension = (severity = 'warning') => {
 
       if (!urlPath.endsWith('.md')) {
         const position = node.position
+        const cleanPath = urlPath.replace(/\/$/, '')
 
-        const message = `Internal link "${url}" must end with .md. Run "npm run normalizeLinks" to fix automatically, or manually change to "${urlPath.replace(/\/$/, '')}/index.md${url.includes('#') ? '#' + url.split('#')[1] : ''}" or "${urlPath.replace(/\/$/, '')}.md${url.includes('#') ? '#' + url.split('#')[1] : ''}".`
+        const message = urlPath.endsWith('/')
+          ? `Relative link "${url}" ends with a trailing slash. Links must include the filename (e.g., index.md). Run "npm run normalizeLinks" to fix automatically, or manually change to "${cleanPath}/index.md" or "${cleanPath}.md".`
+          : `Internal link "${url}" must end with .md. Run "npm run normalizeLinks" to fix automatically, or manually change to "${cleanPath}/index.md" or "${cleanPath}.md".`
 
         if (actualSeverity === 'error') {
           file.fail(message, position, 'remark-lint:internal-link-extension')
