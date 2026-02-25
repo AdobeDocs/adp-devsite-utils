@@ -102,6 +102,7 @@ const remarkLintBigImage = await import(path.join(adpDevsiteUtilsDir, 'linters',
 const remarkLintNoKebabInFilename = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-kebab-in-filename.js'))
 const remarkLintInternalLinkExtension = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-internal-link-extension.js'))
 const remarkLintAnchorLinkExtension = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-anchor-link-extension.js'))
+const remarkLintNoDetailsHtml = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-details-html.js'))
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
@@ -145,6 +146,7 @@ function createProcessor(includeFrontmatterCheck) {
     }
     
     processors = processors
+      .use(remarkLintNoDetailsHtml.default, ['error'])
       .use(remarkLintSelfCloseComponent.default, ['error'])
       .use(remarkLintNoHtmlTag.default, ['error'])
       .use(remarkLintNoCodeTable.default, ['error'])
