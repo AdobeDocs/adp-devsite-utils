@@ -34,7 +34,7 @@ try {
         const isScreamingSnakeCase = new RegExp(/^[A-Z0-9_]*$/).test(str);
         str = isScreamingSnakeCase ? str.toLowerCase() : str;
         return str
-            .match(/[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g)
+            .match(/[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+[a-z]*/g)
             .map((x) => x.toLowerCase())
             .join('-');
     }
