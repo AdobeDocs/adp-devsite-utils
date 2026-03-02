@@ -118,8 +118,7 @@ function getFiles(fileExtensions, __dirname) {
 }
 
 function getDeployableFiles(__dirname) {
-    // files types deployed to EDS in process-mds.sh
-    return getFiles(['.md', '.json'], __dirname);
+    return globSync(__dirname + '/src/pages/**/*').filter((f) => fs.statSync(f).isFile()).map((f) => path.relative(__dirname, f));
 }
 
 function getMarkdownFiles(__dirname) {
