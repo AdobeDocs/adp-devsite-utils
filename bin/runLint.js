@@ -60,14 +60,15 @@ function shouldSkipFrontmatter(filePath) {
 // Check for flags
 const deadLinksOnly = process.argv.includes('--dead-links-only');
 const skipDeadLinks = process.argv.includes('--skip-dead-links');
+const includeInternalLinks = process.argv.includes('--include-internal');
 
 logSection('TEST LINT');
 
 // Determine lint mode for report
 let lintMode = 'Full Linting (all rules + dead links check)';
 if (deadLinksOnly) {
-    logStep('Testing dead links only');
-    lintMode = 'Dead Links Only';
+    logStep(includeInternalLinks ? 'Testing dead links (external + internal)' : 'Testing dead links only');
+    lintMode = includeInternalLinks ? 'Dead Links Only (external + internal)' : 'Dead Links Only';
 } else if (skipDeadLinks) {
     logStep('Testing remark rules (skipping dead links check)');
     lintMode = 'Remark Rules Only (dead links skipped)';
@@ -111,7 +112,15 @@ function createProcessor(includeFrontmatterCheck) {
   let processors = remark().use(remarkFrontmatter, ['yaml']);
 
   if (deadLinksOnly) {
-    // Only check for dead URLs
+    // Check internal links (local filesystem) when --include-internal is set
+    if (includeInternalLinks) {
+      processors = processors
+        .use(remarkValidateLinks, {
+          skipPathPatterns: [/.*config\.md.*/],
+          root: srcPagesDir
+        });
+    }
+    // Check external dead URLs (HTTP)
     processors = processors
       .use(remarkLintNoDeadUrls, {
           skipUrlPatterns,
