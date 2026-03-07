@@ -26,9 +26,18 @@ const buildSiteMetadata = () => {
   }
 };
 
+const buildContributors = () => {
+  try {
+    execSync('npm run buildContributors', { cwd: __dirname, stdio: 'inherit' });
+  } catch (error) {
+    console.warn('Failed to build contributors:', error.message);
+  }
+};
+
 const currentBranch = getCurrentBranch();
 const DOCS_DIRECTORY = process.env.DIRECTORY ||  './src/pages';
 
+buildContributors();
 buildSiteMetadata();
 
 const app = express();
