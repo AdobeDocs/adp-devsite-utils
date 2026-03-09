@@ -28,7 +28,7 @@ const remarkLintNoDetailsHtml = (severity = 'warning') => {
         const message =
           'HTML <details> element is not supported in EDS. Replace with the Details EDS block.\n' +
           'Example: <Details slots="heading, list" repeat="1" summary="Text Description" subText="Description" />\n' +
-          'See: https://developer-stage.adobe.com/dev-docs-reference/blocks/details/'
+          'See: https://developer-stage.adobe.com/dev-docs-reference/getting-started/dev-docs/best-practices/#block-replacements'
 
         if (actualSeverity === 'error') {
           file.fail(message, position, 'remark-lint:no-details-html')
