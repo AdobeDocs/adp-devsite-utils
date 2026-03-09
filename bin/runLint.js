@@ -36,12 +36,12 @@ if (fs.existsSync(packageJsonPath)) {
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         skipUrlPatterns = packageJson?.lint?.skipUrlPatterns || [];
         skipFrontmatterPaths = packageJson?.lint?.skipFrontmatterPaths || [];
-        
+
         if (skipUrlPatterns.length > 0) {
             logStep(`Skipping ${skipUrlPatterns.length} URL pattern(s):`);
             skipUrlPatterns.forEach(pattern => verbose(`  - ${pattern}`));
         }
-        
+
         if (skipFrontmatterPaths.length > 0) {
             logStep(`Skipping frontmatter check for ${skipFrontmatterPaths.length} path(s):`);
             skipFrontmatterPaths.forEach(pattern => verbose(`  - ${pattern}`));
@@ -57,17 +57,22 @@ function shouldSkipFrontmatter(filePath) {
     return skipFrontmatterPaths.some(pattern => relativePath.startsWith(pattern));
 }
 
-// Check for flags
-const deadLinksOnly = process.argv.includes('--dead-links-only');
+// Check for flags (support both new and deprecated names)
+const externalLinksOnly = process.argv.includes('--external-links-only') || process.argv.includes('--dead-links-only');
+const internalLinksOnly = process.argv.includes('--internal-links-only');
 const skipDeadLinks = process.argv.includes('--skip-dead-links');
+const linksOnlyMode = externalLinksOnly || internalLinksOnly;
 
 logSection('TEST LINT');
 
 // Determine lint mode for report
 let lintMode = 'Full Linting (all rules + dead links check)';
-if (deadLinksOnly) {
-    logStep('Testing dead links only');
-    lintMode = 'Dead Links Only';
+if (linksOnlyMode) {
+    const modes = [];
+    if (externalLinksOnly) modes.push('external');
+    if (internalLinksOnly) modes.push('internal');
+    logStep(`Testing dead links (${modes.join(' + ')})`);
+    lintMode = `Dead Links Only (${modes.join(' + ')})`;
 } else if (skipDeadLinks) {
     logStep('Testing remark rules (skipping dead links check)');
     lintMode = 'Remark Rules Only (dead links skipped)';
@@ -111,20 +116,30 @@ const srcPagesDir = path.join(targetDir, 'src', 'pages');
 function createProcessor(includeFrontmatterCheck) {
   let processors = remark().use(remarkFrontmatter, ['yaml']);
 
-  if (deadLinksOnly) {
-    // Only check for dead URLs
-    processors = processors
-      .use(remarkLintNoDeadUrls, {
+  if (linksOnlyMode) {
+    // Check internal links (local filesystem) when --internal-links-only is set
+    if (internalLinksOnly) {
+      processors = processors
+        .use(remarkValidateLinks, {
+          skipPathPatterns: [/.*config\.md.*/],
+          root: srcPagesDir
+        });
+    }
+    // Check external dead URLs (HTTP) when --external-links-only is set
+    if (externalLinksOnly) {
+      processors = processors
+        .use(remarkLintNoDeadUrls, {
           skipUrlPatterns,
           deadOrAliveOptions: {
-              maxRetries: 0, // Disable retries
-              sleep: 0, // Disable sleep
-              https: {
-                  rejectUnauthorized: false, // Don't fail on SSL cert issues
-              },
-              followRedirect: true, // Allow redirects (don't treat as dead links)
+            maxRetries: 0, // Disable retries
+            sleep: 0, // Disable sleep
+            https: {
+              rejectUnauthorized: false, // Don't fail on SSL cert issues
+            },
+            followRedirect: true, // Allow redirects (don't treat as dead links)
           },
-      });
+        });
+    }
   } else {
     // Run all linting rules (optionally skipping dead links)
     processors = processors
@@ -139,12 +154,12 @@ function createProcessor(includeFrontmatterCheck) {
       .use(remarkLintNoHtmlComments.default, ['error'])
       .use(remarkLintNoBrInTables.default, ['error'])
       .use(remarkLintNoBlockInList.default, ['error']);
-    
+
     // Only add frontmatter check if not skipping
     if (includeFrontmatterCheck) {
       processors = processors.use(remarkLintCheckFrontmatter.default);
     }
-    
+
     processors = processors
       .use(remarkLintNoDetailsHtml.default, ['error'])
       .use(remarkLintSelfCloseComponent.default, ['error'])
@@ -172,7 +187,7 @@ function createProcessor(includeFrontmatterCheck) {
         });
     }
   }
-  
+
   return processors;
 }
 
@@ -233,7 +248,7 @@ for (const filePath of markdownFiles) {
         // Choose the appropriate processor based on whether frontmatter check should be skipped
         const skipFrontmatter = shouldSkipFrontmatter(filePath);
         const processor = skipFrontmatter ? processorWithoutFrontmatter : processorWithFrontmatter;
-        
+
         if (skipFrontmatter) {
             verbose(`Processing (skip frontmatter): ${relativePath}`);
         } else {
@@ -247,7 +262,7 @@ for (const filePath of markdownFiles) {
             filesWithIssues++;
             totalIssues += result.messages.length;
             verbose(`\n${relativePath}:`);
-            
+
             // Add file header to report
             addToReport('───────────────────────────────────────────────────────────────');
             addToReport(`📄 FILE: ${relativePath}`);
@@ -257,7 +272,7 @@ for (const filePath of markdownFiles) {
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
                 verbose(` ${severity} ${message}`);
-                
+
                 // Track error/warning counts
                 if (message.fatal) {
                     hasFatalErrors = true;
@@ -286,7 +301,7 @@ for (const filePath of markdownFiles) {
         totalIssues++;
         totalErrors++;
         hasFatalErrors = true;
-        
+
         // Add processing error to report
         const relativePath = path.relative(targetDir, filePath);
         addToReport('───────────────────────────────────────────────────────────────');
