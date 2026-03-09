@@ -4,8 +4,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 
-if (process.env.SKIP_BUILD_CONTRIBUTORS) process.exit(0);
-
 const { log, verbose, logSection, logStep, getMarkdownFiles } = await import('./scriptUtils.js');
 
 const __dirname = process.cwd();
@@ -194,9 +192,6 @@ async function getFileContributors(owner, repo, filePath, headers, branch) {
 }
 
 try {
-  // skip for now
-  process.exit(0);
-
   logSection('BUILD CONTRIBUTORS');
   logStep('Starting contributors build process');
 
