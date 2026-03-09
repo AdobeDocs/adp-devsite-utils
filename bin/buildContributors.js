@@ -4,8 +4,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 
-if (process.env.SKIP_BUILD_CONTRIBUTORS) process.exit(0);
-
 const { log, verbose, logSection, logStep, getMarkdownFiles } = await import('./scriptUtils.js');
 
 const __dirname = process.cwd();
@@ -173,30 +171,21 @@ async function getFileContributors(owner, repo, filePath, headers, branch) {
     return null;
   }
 
-  const contributorMap = new Map();
-  for (const commit of commits) {
-    const login = commit.author?.login;
-    if (!login) continue;
-    if (!contributorMap.has(login)) {
-      contributorMap.set(login, {
-        login,
-        avatarUrl: commit.author.avatar_url,
-      });
-    }
-  }
+  const avatars = [...new Set(
+    commits
+      .map((c) => c.author?.avatar_url)
+      .filter(Boolean)
+  )];
 
-  const updatedAt = commits[0]?.commit?.author?.date ?? null;
+  const lastUpdated = formatDate(commits[0]?.commit?.author?.date ?? null);
 
   return {
-    contributors: [...contributorMap.values()],
-    updatedAt,
+    avatars,
+    lastUpdated,
   };
 }
 
 try {
-  // skip for now
-  process.exit(0);
-
   logSection('BUILD CONTRIBUTORS');
   logStep('Starting contributors build process');
 
@@ -277,16 +266,12 @@ try {
       continue;
     }
 
-    const pagePath = fileToPagePath(file);
-    const contributors = result.contributors.map((c) => ({
-      username: c.login,
-      avatarUrl: c.avatarUrl,
-    }));
+    const page = fileToPagePath(file);
+    
 
     newData.push({
-      page: pagePath,
-      contributors,
-      updatedAt: formatDate(result.updatedAt),
+      page,
+      ...result,
     });
   }
 
