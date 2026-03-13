@@ -122,6 +122,18 @@ function getDeployableFiles(__dirname) {
     return getFiles(['.md', '.json'], __dirname);
 }
 
+/**
+ * All files under src/pages that should be renamed (deployable + assets).
+ * Includes images so directories containing only assets get renamed too,
+ * avoiding duplicate underscore vs hyphen directories.
+ */
+function getFilesForRename(__dirname) {
+    return getFiles(
+        ['.md', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.pdf', '.ico'],
+        __dirname
+    );
+}
+
 function getMarkdownFiles(__dirname) {
     return getFiles(['.md'], __dirname);
 }
@@ -158,6 +170,7 @@ export {
     readRedirectionsFile,
     writeRedirectionsFile,
     getDeployableFiles,
+    getFilesForRename,
     getMarkdownFiles,
     getFindPatternForMarkdownFiles,
     getReplacePatternForMarkdownFiles,
