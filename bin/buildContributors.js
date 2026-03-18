@@ -280,10 +280,10 @@ try {
     process.exit(0);
   }
 
-  const getEntryPage = (entry) => entry.page ?? entry.path;
+  const getEntryPage = (entry) => entry.page;
   const updatedPages = new Set(newData.map((entry) => entry.page));
   const mergedData = [
-    ...existingData.filter((entry) => entry.contributors && !updatedPages.has(getEntryPage(entry)) && !deletedPaths.has(getEntryPage(entry))),
+    ...existingData.filter((entry) => !updatedPages.has(getEntryPage(entry)) && !deletedPaths.has(getEntryPage(entry))),
     ...newData,
   ].sort((a, b) => (getEntryPage(a)).localeCompare(getEntryPage(b)));
 
