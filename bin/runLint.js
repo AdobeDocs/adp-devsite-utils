@@ -109,6 +109,7 @@ const remarkLintInternalLinkExtension = await import(path.join(adpDevsiteUtilsDi
 const remarkLintAnchorLinkExtension = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-anchor-link-extension.js'))
 const remarkLintNoDetailsHtml = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-details-html.js'))
 const remarkLintNoBracketInTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-bracket-in-table.js'))
+const lintNoJsonInSrcPages = await import(path.join(adpDevsiteUtilsDir, 'linters', 'lint-no-json-in-src-pages.js'));
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
@@ -241,6 +242,27 @@ let filesWithIssues = 0;
 let hasFatalErrors = false;
 let totalErrors = 0;
 let totalWarnings = 0;
+
+// Pre-check: detect JSON files in src/pages/
+const jsonCheckResult = lintNoJsonInSrcPages(srcPagesDir, targetDir);
+if (jsonCheckResult.messages.length > 0) {
+    addToReport('───────────────────────────────────────────────────────────────');
+    addToReport('📁 JSON FILES IN src/pages/');
+    addToReport('───────────────────────────────────────────────────────────────');
+
+    for (const msg of jsonCheckResult.messages) {
+        log(`❌ JSON file found in src/pages: ${msg.file}`, 'error');
+        addToReport(`  ❌ ERROR`);
+        addToReport(`    File: ${msg.file}`);
+        addToReport(`    Message: ${msg.message}`);
+        addToReport(`    Rule: ${msg.ruleId}`);
+        addToReport('');
+        totalIssues++;
+        totalErrors++;
+        filesWithIssues++;
+        hasFatalErrors = true;
+    }
+}
 
 for (const filePath of markdownFiles) {
     try {
