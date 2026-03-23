@@ -8,7 +8,9 @@ const EDS_SHEET_KEYS = ['total', 'offset', 'limit', 'data', ':type'];
 function isEdsSheet(filePath) {
     try {
         const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        return EDS_SHEET_KEYS.every(key => key in content);
+        return EDS_SHEET_KEYS.every(key => key in content)
+            && content[':type'] === 'sheet'
+            && Array.isArray(content.data);
     } catch {
         return false;
     }
