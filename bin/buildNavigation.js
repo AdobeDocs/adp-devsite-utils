@@ -134,7 +134,9 @@ function buildSideNavRecursively(sideNav, depth, verbose) {
     let sideNavMarkdown = '';
 
     for (var k in sideNav) {
-        let header = sideNav[k].header ? ' header' : '';
+        // Only add header at top-level of subpages (depth 1); nested items render as links
+        let isTopLevel = depth === 1;
+        let header = (sideNav[k].header && isTopLevel) ? ' header' : '';
         let resolvedPath = resolvePathToMarkdown(sideNav[k].path, verbose);
         sideNavMarkdown += header ? `${insertSpace(depth)}- ${sideNav[k].title}${header}\n` : `${insertSpace(depth)}- [${sideNav[k].title}](${resolvedPath})\n`;
         verbose(`    Side nav item: ${sideNav[k].title} (depth ${depth}) -> ${resolvedPath}`);

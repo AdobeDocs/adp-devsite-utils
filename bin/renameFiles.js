@@ -9,7 +9,7 @@ const {
     readRedirectionsFile,
     writeRedirectionsFile,
     getRedirectionsFilePath,
-    getDeployableFiles,
+    getFilesForRename,
     getMarkdownFiles,
     getFindPatternForMarkdownFiles,
     getReplacePatternForMarkdownFiles,
@@ -279,9 +279,9 @@ try {
         verbose(`Cleaned up ${dirsRemoved} directories`);
     }
 
-        logStep('Getting deployable files');
-    const files = getDeployableFiles(__dirname);
-    verbose(`Found ${files.length} deployable files`);
+        logStep('Getting files to rename');
+    const files = getFilesForRename(__dirname);
+    verbose(`Found ${files.length} files (deployable + assets)`);
 
     logStep('Creating file map');
     const fileMap = getFileMap(files);

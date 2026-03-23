@@ -198,11 +198,6 @@ try {
   const { owner, repo } = repoInfo;
   logStep(`Repository`, `${owner}/${repo}`);
 
-  const branch = getCurrentBranch();
-  if (branch) {
-    logStep('Branch', branch);
-  }
-
   const token = getToken();
   const headers = { 'Accept': 'application/vnd.github+json' };
   if (token) {
@@ -210,6 +205,17 @@ try {
   } else {
     logStep('No credentials found — attempting unauthenticated API calls');
     logStep('This works for public repos (60 req/hr limit)');
+  }
+
+  const branch = getCurrentBranch();
+  if (branch) {
+    logStep('Branch', branch);
+    const branchCheckUrl = `https://api.github.com/repos/${owner}/${repo}/branches/${encodeURIComponent(branch)}`;
+    const branchCheckRes = await fetch(branchCheckUrl, { headers });
+    if (!branchCheckRes.ok) {
+      log(`Branch "${branch}" not found on GitHub (${branchCheckRes.status}). Contributors are fetched from the GitHub API using the current branch, so it must be pushed to the remote before running this script.`, 'warn');
+      process.exit(0);
+    }
   }
 
   let filesToProcess;
@@ -280,10 +286,10 @@ try {
     process.exit(0);
   }
 
-  const getEntryPage = (entry) => entry.page ?? entry.path;
+  const getEntryPage = (entry) => entry.page;
   const updatedPages = new Set(newData.map((entry) => entry.page));
   const mergedData = [
-    ...existingData.filter((entry) => entry.contributors && !updatedPages.has(getEntryPage(entry)) && !deletedPaths.has(getEntryPage(entry))),
+    ...existingData.filter((entry) => !updatedPages.has(getEntryPage(entry)) && !deletedPaths.has(getEntryPage(entry))),
     ...newData,
   ].sort((a, b) => (getEntryPage(a)).localeCompare(getEntryPage(b)));
 
