@@ -1,6 +1,6 @@
 import { visit } from 'unist-util-visit'
 
-const remarkLintNoThematicBreak = (severity = 'warning') => {
+const remarkLintNoHorizontalLines = (severity = 'warning') => {
   return (tree, file) => {
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
 
@@ -16,12 +16,12 @@ const remarkLintNoThematicBreak = (severity = 'warning') => {
         'Replace with `<HorizontalLine />`.'
 
       if (actualSeverity === 'error') {
-        file.fail(message, node.position, 'remark-lint:no-thematic-break')
+        file.fail(message, node.position, 'remark-lint:no-horizontal-lines')
       } else {
-        file.message(message, node.position, 'remark-lint:no-thematic-break')
+        file.message(message, node.position, 'remark-lint:no-horizontal-lines')
       }
     })
   }
 }
 
-export default remarkLintNoThematicBreak
+export default remarkLintNoHorizontalLines
