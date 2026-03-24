@@ -109,6 +109,7 @@ const remarkLintInternalLinkExtension = await import(path.join(adpDevsiteUtilsDi
 const remarkLintAnchorLinkExtension = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-anchor-link-extension.js'))
 const remarkLintNoDetailsHtml = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-details-html.js'))
 const remarkLintNoBracketInTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-bracket-in-table.js'))
+const remarkLintNoHorizontalLines = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-horizontal-lines.js'))
 const lintNoJsonInSrcPages = await import(path.join(adpDevsiteUtilsDir, 'linters', 'lint-no-json-in-src-pages.js'));
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
@@ -172,7 +173,8 @@ function createProcessor(includeFrontmatterCheck) {
       .use(remarkLintNoAltTextForImage.default, ['warning'])
       .use(remarkLintNoKebabInFilename.default, ['error'])
       .use(remarkLintInternalLinkExtension.default, ['error'])
-      .use(remarkLintAnchorLinkExtension.default, ['error']);
+      .use(remarkLintAnchorLinkExtension.default, ['error'])
+      .use(remarkLintNoHorizontalLines.default, ['error']);
 
     // Add dead links check unless explicitly skipped
     if (!skipDeadLinks) {
