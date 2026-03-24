@@ -244,7 +244,7 @@ let totalErrors = 0;
 let totalWarnings = 0;
 
 // Pre-check: detect JSON files in src/pages/
-const jsonCheckResult = lintNoJsonInSrcPages(srcPagesDir, targetDir);
+const jsonCheckResult = lintNoJsonInSrcPages.default(srcPagesDir, targetDir);
 if (jsonCheckResult.messages.length > 0) {
     addToReport('───────────────────────────────────────────────────────────────');
     addToReport('📁 JSON FILES IN src/pages/');
