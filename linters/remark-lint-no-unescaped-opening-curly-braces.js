@@ -6,6 +6,7 @@ const remarkLintNoUnescapedCurlyBraces = (severity = 'warning') => {
     const source = file.toString()
 
     visit(tree, 'text', (node) => {
+      if (!node.position) return
       const { start, end } = node.position
       
       // We must look at the "raw" source for this node to see backslashes correctly
