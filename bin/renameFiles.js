@@ -40,8 +40,8 @@ try {
     }
 
     function toEdsCase(str) {
-        const isValid = Boolean(/^([a-z0-9-]*)$/.test(str));
-        return isValid ? str : toKebabCase(str);
+        const isValid = /^([a-z0-9-]*)$/.test(str);
+        return isValid ? str : str.toLowerCase().replace(/_/g, '-');
     }
 
     function toUrl(str) {
