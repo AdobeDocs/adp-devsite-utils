@@ -6,9 +6,18 @@ const remarkLintNoDetailsHtml = (severity = 'warning') => {
 
     const content = file.toString()
     const lines = content.split('\n')
+    let inCodeBlock = false
 
     for (let lineNumber = 1; lineNumber <= lines.length; lineNumber++) {
       const line = lines[lineNumber - 1]
+      const trimmedLine = line.trim()
+
+      if (trimmedLine.startsWith('```')) {
+        inCodeBlock = !inCodeBlock
+        continue
+      }
+
+      if (inCodeBlock) continue
 
       const detailsOpenRegex = /<details(?:\s[^>]*)?\s*>/gi
       let match

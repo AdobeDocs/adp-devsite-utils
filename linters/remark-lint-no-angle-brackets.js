@@ -5,13 +5,20 @@ const remarkLintNoAngleBrackets = (severity = 'warning') => {
     // Handle both array format [severity] and direct severity string
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
 
-    // Simple line-by-line scanning approach (more reliable than AST parsing)
     const content = file.toString()
     const lines = content.split('\n')
+    let inCodeBlock = false
 
     for (let lineNumber = 1; lineNumber <= lines.length; lineNumber++) {
       const line = lines[lineNumber - 1]
       const trimmedLine = line.trim()
+
+      if (trimmedLine.startsWith('```')) {
+        inCodeBlock = !inCodeBlock
+        continue
+      }
+
+      if (inCodeBlock) continue
 
       // Check for links enclosed with <> instead of []
       const angleBracketLinks = trimmedLine.match(/<([^>]+)>/g)
