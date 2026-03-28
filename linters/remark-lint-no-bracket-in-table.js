@@ -6,10 +6,18 @@ const remarkLintNoBracketInTable = (severity = 'warning') => {
     const lines = content.split('\n')
 
     let inTable = false
+    let inCodeBlock = false
 
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]
       const trimmedLine = line.trim()
+
+      if (trimmedLine.startsWith('```')) {
+        inCodeBlock = !inCodeBlock
+        continue
+      }
+
+      if (inCodeBlock) continue
 
       const pipeCount = (trimmedLine.match(/\|/g) || []).length
       if (pipeCount >= 2) {
