@@ -308,7 +308,9 @@ for (const filePath of markdownFiles) {
                 }
 
                 // Add to report with detailed formatting
-                const location = message.line ? `Line ${message.line}${message.column ? `:${message.column}` : ''}` : 'N/A';
+                const msgLine = message.line || message.place?.start?.line || message.place?.line;
+                const msgCol = message.column || message.place?.start?.column || message.place?.column;
+                const location = msgLine ? `Line ${msgLine}${msgCol ? `:${msgCol}` : ''}` : 'N/A';
                 addToReport(`  ${severity}`);
                 addToReport(`    Location: ${location}`);
                 addToReport(`    Message: ${message.message || message}`);

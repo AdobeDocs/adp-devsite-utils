@@ -5,16 +5,23 @@ const remarkLintNoBrInTables = (severity = 'warning') => {
     // Handle both array format [severity] and direct severity string
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
 
-    // Get the raw file content for line-by-line analysis
     const content = file.toString()
     const lines = content.split('\n')
 
-    // Track if we're inside a table
     let inTable = false
+    let inCodeBlock = false
 
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]
       const trimmedLine = line.trim()
+
+      if (trimmedLine.startsWith('```')) {
+        inCodeBlock = !inCodeBlock
+        inTable = false
+        continue
+      }
+
+      if (inCodeBlock) continue
 
       // Detect table start (line with | characters)
       if (trimmedLine.includes('|') && !inTable) {
