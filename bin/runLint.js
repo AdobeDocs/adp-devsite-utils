@@ -114,10 +114,23 @@ const lintNoJsonInSrcPages = await import(path.join(adpDevsiteUtilsDir, 'linters
 // Find all markdown files in src/pages
 const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
+// Plugin that prevents file.fail() from throwing so all errors are collected
+function remarkCollectAllErrors() {
+  return (tree, file) => {
+    file.fail = function(reason, options, origin) {
+      const msg = file.message(reason, options, origin);
+      msg.fatal = true;
+      return msg;
+    };
+  };
+}
+
 // Create remark processor with plugins
 // Two processors: one with frontmatter check and one without
 function createProcessor(includeFrontmatterCheck) {
-  let processors = remark().use(remarkFrontmatter, ['yaml']);
+  let processors = remark()
+    .use(remarkFrontmatter, ['yaml'])
+    .use(remarkCollectAllErrors);
 
   if (linksOnlyMode) {
     // Check internal links (local filesystem) when --internal-links-only is set
@@ -287,7 +300,13 @@ for (const filePath of markdownFiles) {
         if (result.messages.length > 0) {
             filesWithIssues++;
             totalIssues += result.messages.length;
-            verbose(`\n${relativePath}:`);
+
+            const hasErrors = result.messages.some(m => m.fatal);
+            if (hasErrors) {
+                log(`\n${relativePath}:`);
+            } else {
+                verbose(`\n${relativePath}:`);
+            }
 
             // Add file header to report
             addToReport('───────────────────────────────────────────────────────────────');
@@ -297,7 +316,8 @@ for (const filePath of markdownFiles) {
             // Display all messages for this file
             result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
-                verbose(` ${severity} ${message}`);
+                const logFn = message.fatal ? log : verbose;
+                logFn(` ${severity} ${message}`);
 
                 // Track error/warning counts
                 if (message.fatal) {
@@ -316,7 +336,7 @@ for (const filePath of markdownFiles) {
                 addToReport(`    Message: ${message.message || message}`);
                 if (message.ruleId) {
                     addToReport(`    Rule: ${message.ruleId}`);
-                    verbose(`    Rule: ${message.ruleId}`);
+                    logFn(`    Rule: ${message.ruleId}`);
                 }
                 addToReport('');
             });
@@ -345,6 +365,8 @@ for (const filePath of markdownFiles) {
 log(`\n📊 Linting Summary:`);
 log(`   Files processed: ${markdownFiles.length}`);
 log(`   Files with issues: ${filesWithIssues}`);
+log(`   Total errors: ${totalErrors}`);
+log(`   Total warnings: ${totalWarnings}`);
 log(`   Total issues: ${totalIssues}`);
 
 // Add summary to report
