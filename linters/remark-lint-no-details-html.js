@@ -19,7 +19,7 @@ const remarkLintNoDetailsHtml = (severity = 'warning') => {
 
       if (inCodeBlock) continue
 
-      const detailsOpenRegex = /<details(?:\s[^>]*)?\s*>/gi
+      const detailsOpenRegex = /<details(\s(?:[^>"']*(?:"[^"]*"|'[^']*'))*[^>"']*)?\s*>/gi
       let match
 
       while ((match = detailsOpenRegex.exec(line)) !== null) {
