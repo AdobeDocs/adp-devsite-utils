@@ -79,8 +79,8 @@ function getCurrentBranch() {
 
 function getBaseBranch() {
   // for github actions
-  if (process.env.GITHUB_BASE_REF) {
-    return `origin/${process.env.GITHUB_BASE_REF}`;
+  if (process.env.BASE_SHA) {
+    return process.env.BASE_SHA;
   }
 
   // for local development
