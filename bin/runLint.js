@@ -297,6 +297,17 @@ for (const filePath of markdownFiles) {
         // Process the file with remark (pass path for linters that need filename access)
         const result = await processor.process({ path: filePath, value: content });
 
+        // Upgrade remark-validate-links "missing-file" warnings to errors
+        for (const message of result.messages) {
+            if (message.ruleId === 'missing-file' && !message.fatal) {
+                message.fatal = true;
+                message.message +=
+                    '. In EDS, a trailing slash (e.g., "./subdir/") resolves to' +
+                    ' "subdir/index.md", while no trailing slash (e.g., "./page")' +
+                    ' resolves to "page.md".';
+            }
+        }
+
         if (result.messages.length > 0) {
             filesWithIssues++;
             totalIssues += result.messages.length;
