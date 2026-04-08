@@ -27,6 +27,22 @@ const adpDevsiteUtilsDir = path.dirname(__dirname);
 // Get the current working directory (target repo where the command is run)
 const targetDir = process.cwd();
 
+// Collect rules to skip from SKIP_* environment variables (e.g. SKIP_NO_HTML_COMMENTS=true → no-html-comments)
+let skipRules = [];
+for (const [key, value] of Object.entries(process.env)) {
+    if (key.startsWith('SKIP_') && value === 'true') {
+        const ruleName = key.slice('SKIP_'.length).toLowerCase().replace(/_/g, '-');
+        skipRules.push(ruleName);
+    }
+}
+
+// Also support --skip-rules CLI flag (comma-separated rule names)
+const skipRulesArgIndex = process.argv.indexOf('--skip-rules');
+if (skipRulesArgIndex !== -1 && process.argv[skipRulesArgIndex + 1]) {
+    const cliRules = process.argv[skipRulesArgIndex + 1].split(',').map(r => r.trim()).filter(Boolean);
+    skipRules.push(...cliRules);
+}
+
 // Read lint configuration from content repo's package.json
 let skipUrlPatterns = [];
 let skipFrontmatterPaths = [];
@@ -36,6 +52,10 @@ if (fs.existsSync(packageJsonPath)) {
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         skipUrlPatterns = packageJson?.lint?.skipUrlPatterns || [];
         skipFrontmatterPaths = packageJson?.lint?.skipFrontmatterPaths || [];
+
+        // Merge skipRules from package.json with CLI
+        const packageSkipRules = packageJson?.lint?.skipRules || [];
+        skipRules = [...new Set([...skipRules, ...packageSkipRules])];
 
         if (skipUrlPatterns.length > 0) {
             logStep(`Skipping ${skipUrlPatterns.length} URL pattern(s):`);
@@ -49,6 +69,20 @@ if (fs.existsSync(packageJsonPath)) {
     } catch (error) {
         log(`Failed to parse package.json: ${error.message}`, 'warn');
     }
+}
+
+if (skipRules.length > 0) {
+    logStep(`Skipping ${skipRules.length} rule(s):`);
+    skipRules.forEach(rule => verbose(`  - ${rule}`));
+}
+
+// Check whether a ruleId should be skipped.
+// Matches both short form ("no-html-comments") and namespaced form ("remark-lint:no-html-comments").
+function isRuleSkipped(ruleId) {
+    if (!ruleId || skipRules.length === 0) return false;
+    return skipRules.some(skipRule =>
+        ruleId === skipRule || ruleId === `remark-lint:${skipRule}` || ruleId.endsWith(`:${skipRule}`)
+    );
 }
 
 // Helper function to check if a file should skip frontmatter check
@@ -88,6 +122,9 @@ addToReport('');
 addToReport(`Generated: ${new Date().toISOString()}`);
 addToReport(`Mode: ${lintMode}`);
 addToReport(`Target Directory: ${targetDir}`);
+if (skipRules.length > 0) {
+    addToReport(`Skipped Rules: ${skipRules.join(', ')}`);
+}
 addToReport('');
 addToReport('───────────────────────────────────────────────────────────────');
 
@@ -297,11 +334,14 @@ for (const filePath of markdownFiles) {
         // Process the file with remark (pass path for linters that need filename access)
         const result = await processor.process({ path: filePath, value: content });
 
-        if (result.messages.length > 0) {
-            filesWithIssues++;
-            totalIssues += result.messages.length;
+        // Filter out messages from skipped rules
+        const messages = result.messages.filter(m => !isRuleSkipped(m.ruleId));
 
-            const hasErrors = result.messages.some(m => m.fatal);
+        if (messages.length > 0) {
+            filesWithIssues++;
+            totalIssues += messages.length;
+
+            const hasErrors = messages.some(m => m.fatal);
             if (hasErrors) {
                 log(`\n${relativePath}:`);
             } else {
@@ -314,7 +354,7 @@ for (const filePath of markdownFiles) {
             addToReport('───────────────────────────────────────────────────────────────');
 
             // Display all messages for this file
-            result.messages.forEach(message => {
+            messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
                 const logFn = message.fatal ? log : verbose;
                 logFn(` ${severity} ${message}`);
