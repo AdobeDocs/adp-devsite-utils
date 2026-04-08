@@ -53,8 +53,16 @@ if (fs.existsSync(packageJsonPath)) {
         skipUrlPatterns = packageJson?.lint?.skipUrlPatterns || [];
         skipFrontmatterPaths = packageJson?.lint?.skipFrontmatterPaths || [];
 
-        // Merge skipRules from package.json with CLI
-        const packageSkipRules = packageJson?.lint?.skipRules || [];
+        // Merge skipRules from package.json (supports both object and array format)
+        const rawSkipRules = packageJson?.lint?.skipRules;
+        let packageSkipRules = [];
+        if (Array.isArray(rawSkipRules)) {
+            packageSkipRules = rawSkipRules;
+        } else if (rawSkipRules && typeof rawSkipRules === 'object') {
+            packageSkipRules = Object.entries(rawSkipRules)
+                .filter(([, enabled]) => enabled === true)
+                .map(([rule]) => rule);
+        }
         skipRules = [...new Set([...skipRules, ...packageSkipRules])];
 
         if (skipUrlPatterns.length > 0) {
