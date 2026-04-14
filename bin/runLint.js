@@ -371,11 +371,18 @@ for (const filePath of markdownFiles) {
             }
         }
 
+        // Filter out messages from rules skipped for this file's path
+        for (let i = result.messages.length - 1; i >= 0; i--) {
+            if (isRuleSkipped(result.messages[i].ruleId, filePath)) {
+                result.messages.splice(i, 1);
+            }
+        }
+
         if (result.messages.length > 0) {
             filesWithIssues++;
-            totalIssues += messages.length;
+            totalIssues += result.messages.length;
 
-            const hasErrors = messages.some(m => m.fatal);
+            const hasErrors = result.messages.some(m => m.fatal);
             if (hasErrors) {
                 log(`\n${relativePath}:`);
             } else {
@@ -388,7 +395,7 @@ for (const filePath of markdownFiles) {
             addToReport('───────────────────────────────────────────────────────────────');
 
             // Display all messages for this file
-            messages.forEach(message => {
+            result.messages.forEach(message => {
                 const severity = message.fatal ? '❌ ERROR' : '⚠️  WARNING';
                 const logFn = message.fatal ? log : verbose;
                 logFn(` ${severity} ${message}`);
