@@ -44,8 +44,8 @@ const app = express();
 console.log(path.resolve(__dirname, `./${DOCS_DIRECTORY}`));
 app.use(
   express.static(path.resolve(__dirname, `./${DOCS_DIRECTORY}`), {
-    setHeaders: (res) => {
-      res.setHeader('last-modified', new Date().toGMTString());
+    setHeaders: (res, filePath, stat) => {
+      res.setHeader('last-modified', stat.mtime.toGMTString());
       res.setHeader('local-branch-name', currentBranch);
     },
   }),
