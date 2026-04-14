@@ -297,7 +297,25 @@ for (const filePath of markdownFiles) {
         // Process the file with remark (pass path for linters that need filename access)
         const result = await processor.process({ path: filePath, value: content });
 
-        // Upgrade remark-validate-links "missing-file" warnings to errors
+        // Suppress false positive missing-file warnings for files that exist
+        // in the repo but outside src/pages/ 
+        for (let i = result.messages.length - 1; i >= 0; i--) {
+            const message = result.messages[i];
+            if (message.ruleId === 'missing-file') {
+                const match = message.message.match(/Cannot find file `([^`]+)`/);
+                if (match) {
+                    const sourceDir = path.dirname(filePath);
+                    const resolvedFromSource = path.resolve(sourceDir, match[1]);
+                    const repoRelative = path.relative(srcPagesDir, resolvedFromSource);
+                    const actualPath = path.resolve(targetDir, repoRelative);
+                    if (fs.existsSync(actualPath)) {
+                        result.messages.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        // Upgrade remaining missing-file warnings to errors
         for (const message of result.messages) {
             if (message.ruleId === 'missing-file' && !message.fatal) {
                 message.fatal = true;
