@@ -123,15 +123,11 @@ function getDeployableFiles(__dirname) {
 }
 
 /**
- * All files under src/pages that should be renamed (deployable + assets).
- * Includes images so directories containing only assets get renamed too,
- * avoiding duplicate underscore vs hyphen directories.
+ * All files under src/pages that should be renamed or relocated.
+ * Matches all file types so no extensions are missed.
  */
 function getFilesForRename(__dirname) {
-    return getFiles(
-        ['.md', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.pdf', '.ico'],
-        __dirname
-    );
+    return globSync(__dirname + '/src/pages/**/*.*').map((f) => path.relative(__dirname, f));
 }
 
 function getMarkdownFiles(__dirname) {

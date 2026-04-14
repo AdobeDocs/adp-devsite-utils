@@ -44,6 +44,23 @@ try {
         return isValid ? str : toKebabCase(str);
     }
 
+    const SRC_PAGES = path.join('src', 'pages');
+    const STATIC_DIR = 'static';
+    const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico']);
+
+    /**
+     * Determines if a file under src/pages/ should be relocated to static/.
+     *
+     * Stay in src/pages/:  .md files and images
+     * Move to static/:     everything else (.json, .yaml, .csv, .pdf, etc.)
+     */
+    function shouldMoveToStatic(file) {
+        const ext = path.extname(file).toLowerCase();
+        if (ext === '.md') return false;
+        if (IMAGE_EXTENSIONS.has(ext)) return false;
+        return true;
+    }
+
     function toUrl(str) {
         let url = removeFileExtension(str);
 
@@ -73,24 +90,48 @@ try {
         return `${renamedFileWithoutExt}${ext}`;
     }
 
-    function getFileMap(files) {
-        verbose(`Processing ${files.length} files for renaming`);
-        const map = new Map();
-        let renamedCount = 0;
+    /**
+     * Computes the destination path: kebab-cased, and relocated to static/ if applicable.
+     */
+    function getDestinationPath(file) {
+        const kebabPath = toEdsPath(file);
+
+        if (shouldMoveToStatic(file)) {
+            const relativeToSrcPages = path.relative(SRC_PAGES, kebabPath);
+            return path.join(STATIC_DIR, relativeToSrcPages);
+        }
+
+        return kebabPath;
+    }
+
+    /**
+     * Builds separate maps for files that stay in src/pages/ (rename only)
+     * vs files that move to static/ (relocate + rename).
+     */
+    function getFileMaps(files) {
+        verbose(`Processing ${files.length} files for renaming/relocation`);
+        const stayMap = new Map();
+        const moveMap = new Map();
 
         files.forEach((from, index) => {
-            const to = toEdsPath(from);
-            if (to !== from) {
-                map.set(from, to);
-                verbose(`  File ${index + 1}: "${from}" -> "${to}"`);
-                renamedCount++;
-            } else {
+            const to = getDestinationPath(from);
+            if (to === from) {
                 verbose(`  File ${index + 1}: "${from}" (no change needed)`);
+                return;
+            }
+            const isRelocating = to.startsWith(STATIC_DIR + path.sep) || to.startsWith(STATIC_DIR + '/');
+            if (isRelocating) {
+                moveMap.set(from, to);
+                verbose(`  File ${index + 1}: "${from}" -> "${to}" [RELOCATE to static]`);
+            } else {
+                stayMap.set(from, to);
+                verbose(`  File ${index + 1}: "${from}" -> "${to}" [RENAME in place]`);
             }
         });
 
-        verbose(`Total files to rename: ${renamedCount}`);
-        return map;
+        verbose(`Files to rename in place: ${stayMap.size}`);
+        verbose(`Files to relocate to static/: ${moveMap.size}`);
+        return { stayMap, moveMap };
     }
 
     function getLinkMap(fileMap, relativeToDir) {
@@ -128,6 +169,35 @@ try {
             linkMap,
             getFindPattern: getFindPatternForMarkdownFiles,
             getReplacePattern: getReplacePatternForMarkdownFiles,
+        });
+    }
+
+    /**
+     * Updates markdown links for files that moved from src/pages/ to static/.
+     * Replaces relative paths with pathPrefix-based absolute paths, since the
+     * runtime resolves pathPrefix-prefixed URLs from the static/ folder.
+     */
+    function relocateLinksInMarkdownFile(moveMap, file, pathPrefix) {
+        if (moveMap.size === 0) return;
+
+        const dir = path.dirname(file);
+        const linkMap = new Map();
+
+        moveMap.forEach((toFile, fromFile) => {
+            const fromRel = path.relative(dir, fromFile).replaceAll(path.sep, '/');
+            const relToStatic = path.relative(STATIC_DIR, toFile).replaceAll(path.sep, '/');
+            let toAbsolute = `${pathPrefix}/${relToStatic}`.replace(/\/\//g, '/');
+            linkMap.set(fromRel, toAbsolute);
+        });
+
+        if (linkMap.size === 0) return;
+        verbose(`  Updating ${linkMap.size} relocated-file links in ${file}`);
+
+        replaceLinksInFile({
+            file,
+            linkMap,
+            getFindPattern: getFindPatternForMarkdownFiles,
+            getReplacePattern: (to) => `$1${to}$4$5`,
         });
     }
 
@@ -279,43 +349,65 @@ try {
         verbose(`Cleaned up ${dirsRemoved} directories`);
     }
 
-        logStep('Getting files to rename');
+    logStep('Getting files to rename');
     const files = getFilesForRename(__dirname);
     verbose(`Found ${files.length} files (deployable + assets)`);
 
-    logStep('Creating file map');
-    const fileMap = getFileMap(files);
-
-    logStep('Processing markdown files');
-    const mdFiles = getMarkdownFiles(__dirname);
-    verbose(`Processing ${mdFiles.length} markdown files`);
-    mdFiles.forEach((mdFile, index) => {
-        verbose(`  Processing markdown file ${index + 1}/${mdFiles.length}: ${mdFile}`);
-        renameLinksInMarkdownFile(fileMap, mdFile);
-    });
-
-    logStep('Processing redirects file');
-    const redirectsFile = getRedirectionsFilePath(__dirname);
+    logStep('Resolving path prefix');
     const pathPrefix = await getPathPrefix();
     verbose(`Path prefix: ${pathPrefix}`);
-    if (fs.existsSync(redirectsFile)) {
-        verbose(`Redirects file found: ${redirectsFile}`);
-        renameLinksInRedirectsFile(fileMap, pathPrefix);
-    } else {
-        verbose('No redirects file found, skipping');
-    }
 
-    logStep('Processing gatsby config file');
-    const gatsbyConfigFile = path.join(__dirname, 'gatsby-config.js');
-    if (fs.existsSync(gatsbyConfigFile)) {
-        verbose(`Gatsby config file found: ${gatsbyConfigFile}`);
-        renameLinksInGatsbyConfigFile(fileMap, gatsbyConfigFile);
-    } else {
-        verbose('No gatsby config file found, skipping');
-    }
+    logStep('Creating file maps');
+    const { stayMap, moveMap } = getFileMaps(files);
+    const allMap = new Map([...stayMap, ...moveMap]);
 
-    logStep('Executing file renames');
-    renameFiles(fileMap);
+    if (allMap.size === 0) {
+        log('No files need renaming or relocation');
+    } else {
+        logStep('Processing markdown files — rename links');
+        const mdFiles = getMarkdownFiles(__dirname);
+        verbose(`Processing ${mdFiles.length} markdown files`);
+        mdFiles.forEach((mdFile, index) => {
+            verbose(`  Processing markdown file ${index + 1}/${mdFiles.length}: ${mdFile}`);
+            renameLinksInMarkdownFile(stayMap, mdFile);
+        });
+
+        if (moveMap.size > 0 && pathPrefix) {
+            logStep('Processing markdown files — relocate links to pathPrefix-based paths');
+            mdFiles.forEach((mdFile) => {
+                relocateLinksInMarkdownFile(moveMap, mdFile, pathPrefix);
+            });
+        }
+
+        logStep('Processing redirects file');
+        const redirectsFile = getRedirectionsFilePath(__dirname);
+        if (fs.existsSync(redirectsFile)) {
+            verbose(`Redirects file found: ${redirectsFile}`);
+            renameLinksInRedirectsFile(stayMap, pathPrefix);
+        } else {
+            verbose('No redirects file found, skipping');
+        }
+
+        logStep('Processing gatsby config file');
+        const gatsbyConfigFile = path.join(__dirname, 'gatsby-config.js');
+        if (fs.existsSync(gatsbyConfigFile)) {
+            verbose(`Gatsby config file found: ${gatsbyConfigFile}`);
+            renameLinksInGatsbyConfigFile(stayMap, gatsbyConfigFile);
+        } else {
+            verbose('No gatsby config file found, skipping');
+        }
+
+        logStep('Executing file renames and relocations');
+        renameFiles(allMap);
+
+        log(`Rename complete: ${stayMap.size} file(s) renamed in src/pages/, ${moveMap.size} file(s) relocated to static/`);
+        if (moveMap.size > 0) {
+            log('Relocated files:');
+            moveMap.forEach((to, from) => {
+                log(`  ${from} -> ${to}`);
+            });
+        }
+    }
 
     verbose('File rename process completed successfully');
 } catch (err) {
