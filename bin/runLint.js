@@ -27,43 +27,17 @@ const adpDevsiteUtilsDir = path.dirname(__dirname);
 // Get the current working directory (target repo where the command is run)
 const targetDir = process.cwd();
 
-// Collect rules to skip from SKIP_* environment variables (e.g. SKIP_NO_HTML_COMMENTS=true → no-html-comments)
-let skipRules = [];
-for (const [key, value] of Object.entries(process.env)) {
-    if (key.startsWith('SKIP_') && value === 'true') {
-        const ruleName = key.slice('SKIP_'.length).toLowerCase().replace(/_/g, '-');
-        skipRules.push(ruleName);
-    }
-}
-
-// Also support --skip-rules CLI flag (comma-separated rule names)
-const skipRulesArgIndex = process.argv.indexOf('--skip-rules');
-if (skipRulesArgIndex !== -1 && process.argv[skipRulesArgIndex + 1]) {
-    const cliRules = process.argv[skipRulesArgIndex + 1].split(',').map(r => r.trim()).filter(Boolean);
-    skipRules.push(...cliRules);
-}
-
 // Read lint configuration from content repo's package.json
 let skipUrlPatterns = [];
 let skipFrontmatterPaths = [];
+let skipRulesConfig = {};  // { ruleName: { paths: ["src/pages/..."] } }
 const packageJsonPath = path.join(targetDir, 'package.json');
 if (fs.existsSync(packageJsonPath)) {
     try {
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         skipUrlPatterns = packageJson?.lint?.skipUrlPatterns || [];
         skipFrontmatterPaths = packageJson?.lint?.skipFrontmatterPaths || [];
-
-        // Merge skipRules from package.json (supports both object and array format)
-        const rawSkipRules = packageJson?.lint?.skipRules;
-        let packageSkipRules = [];
-        if (Array.isArray(rawSkipRules)) {
-            packageSkipRules = rawSkipRules;
-        } else if (rawSkipRules && typeof rawSkipRules === 'object') {
-            packageSkipRules = Object.entries(rawSkipRules)
-                .filter(([, enabled]) => enabled === true)
-                .map(([rule]) => rule);
-        }
-        skipRules = [...new Set([...skipRules, ...packageSkipRules])];
+        skipRulesConfig = packageJson?.lint?.skipRules || {};
 
         if (skipUrlPatterns.length > 0) {
             logStep(`Skipping ${skipUrlPatterns.length} URL pattern(s):`);
@@ -74,23 +48,35 @@ if (fs.existsSync(packageJsonPath)) {
             logStep(`Skipping frontmatter check for ${skipFrontmatterPaths.length} path(s):`);
             skipFrontmatterPaths.forEach(pattern => verbose(`  - ${pattern}`));
         }
+
+        const skipRuleNames = Object.keys(skipRulesConfig);
+        if (skipRuleNames.length > 0) {
+            logStep(`Configured ${skipRuleNames.length} rule skip(s):`);
+            skipRuleNames.forEach(rule => {
+                const paths = skipRulesConfig[rule].paths || [];
+                verbose(`  - ${rule} → ${paths.length ? paths.join(', ') : '(all files)'}`);
+            });
+        }
     } catch (error) {
         log(`Failed to parse package.json: ${error.message}`, 'warn');
     }
 }
 
-if (skipRules.length > 0) {
-    logStep(`Skipping ${skipRules.length} rule(s):`);
-    skipRules.forEach(rule => verbose(`  - ${rule}`));
-}
-
-// Check whether a ruleId should be skipped.
-// Matches both short form ("no-html-comments") and namespaced form ("remark-lint:no-html-comments").
-function isRuleSkipped(ruleId) {
-    if (!ruleId || skipRules.length === 0) return false;
-    return skipRules.some(skipRule =>
-        ruleId === skipRule || ruleId === `remark-lint:${skipRule}` || ruleId.endsWith(`:${skipRule}`)
-    );
+// Check whether a ruleId should be skipped for a given file.
+// Each entry in skipRulesConfig has a "paths" array of prefix strings.
+// If paths is empty/missing, the rule is skipped globally.
+function isRuleSkipped(ruleId, filePath) {
+    if (!ruleId || Object.keys(skipRulesConfig).length === 0) return false;
+    const relativePath = path.relative(targetDir, filePath);
+    for (const [rule, config] of Object.entries(skipRulesConfig)) {
+        const matches = ruleId === rule
+            || ruleId === `remark-lint:${rule}`
+            || ruleId.endsWith(`:${rule}`);
+        if (!matches) continue;
+        const paths = config.paths || [];
+        if (paths.length === 0 || paths.some(p => relativePath.startsWith(p))) return true;
+    }
+    return false;
 }
 
 // Helper function to check if a file should skip frontmatter check
@@ -130,8 +116,13 @@ addToReport('');
 addToReport(`Generated: ${new Date().toISOString()}`);
 addToReport(`Mode: ${lintMode}`);
 addToReport(`Target Directory: ${targetDir}`);
-if (skipRules.length > 0) {
-    addToReport(`Skipped Rules: ${skipRules.join(', ')}`);
+const reportSkipRuleNames = Object.keys(skipRulesConfig);
+if (reportSkipRuleNames.length > 0) {
+    addToReport(`Skipped Rules:`);
+    reportSkipRuleNames.forEach(rule => {
+        const paths = skipRulesConfig[rule].paths || [];
+        addToReport(`  - ${rule} → ${paths.length ? paths.join(', ') : '(all files)'}`);
+    });
 }
 addToReport('');
 addToReport('───────────────────────────────────────────────────────────────');
