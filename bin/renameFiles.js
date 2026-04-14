@@ -46,7 +46,7 @@ try {
 
     const SRC_PAGES = path.join('src', 'pages');
     const STATIC_DIR = 'static';
-    const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico']);
+    const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.mmd']);
 
     /**
      * Determines if a file under src/pages/ should be relocated to static/.
