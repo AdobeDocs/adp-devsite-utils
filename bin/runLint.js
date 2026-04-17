@@ -30,12 +30,14 @@ const targetDir = process.cwd();
 // Read lint configuration from content repo's package.json
 let skipUrlPatterns = [];
 let skipFrontmatterPaths = [];
+let skipRulesConfig = {};  // { ruleName: { paths: ["src/pages/..."] } }
 const packageJsonPath = path.join(targetDir, 'package.json');
 if (fs.existsSync(packageJsonPath)) {
     try {
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         skipUrlPatterns = packageJson?.lint?.skipUrlPatterns || [];
         skipFrontmatterPaths = packageJson?.lint?.skipFrontmatterPaths || [];
+        skipRulesConfig = packageJson?.lint?.skipRules || {};
 
         if (skipUrlPatterns.length > 0) {
             logStep(`Skipping ${skipUrlPatterns.length} URL pattern(s):`);
@@ -46,9 +48,35 @@ if (fs.existsSync(packageJsonPath)) {
             logStep(`Skipping frontmatter check for ${skipFrontmatterPaths.length} path(s):`);
             skipFrontmatterPaths.forEach(pattern => verbose(`  - ${pattern}`));
         }
+
+        const skipRuleNames = Object.keys(skipRulesConfig);
+        if (skipRuleNames.length > 0) {
+            logStep(`Configured ${skipRuleNames.length} rule skip(s):`);
+            skipRuleNames.forEach(rule => {
+                const paths = skipRulesConfig[rule].paths || [];
+                verbose(`  - ${rule} → ${paths.length ? paths.join(', ') : '(all files)'}`);
+            });
+        }
     } catch (error) {
         log(`Failed to parse package.json: ${error.message}`, 'warn');
     }
+}
+
+// Check whether a ruleId should be skipped for a given file.
+// Each entry in skipRulesConfig has a "paths" array of prefix strings.
+// If paths is empty/missing, the rule is skipped globally.
+function isRuleSkipped(ruleId, filePath) {
+    if (!ruleId || Object.keys(skipRulesConfig).length === 0) return false;
+    const relativePath = path.relative(targetDir, filePath);
+    for (const [rule, config] of Object.entries(skipRulesConfig)) {
+        const matches = ruleId === rule
+            || ruleId === `remark-lint:${rule}`
+            || ruleId.endsWith(`:${rule}`);
+        if (!matches) continue;
+        const paths = config.paths || [];
+        if (paths.length === 0 || paths.some(p => relativePath.startsWith(p))) return true;
+    }
+    return false;
 }
 
 // Helper function to check if a file should skip frontmatter check
@@ -88,6 +116,14 @@ addToReport('');
 addToReport(`Generated: ${new Date().toISOString()}`);
 addToReport(`Mode: ${lintMode}`);
 addToReport(`Target Directory: ${targetDir}`);
+const reportSkipRuleNames = Object.keys(skipRulesConfig);
+if (reportSkipRuleNames.length > 0) {
+    addToReport(`Skipped Rules:`);
+    reportSkipRuleNames.forEach(rule => {
+        const paths = skipRulesConfig[rule].paths || [];
+        addToReport(`  - ${rule} → ${paths.length ? paths.join(', ') : '(all files)'}`);
+    });
+}
 addToReport('');
 addToReport('───────────────────────────────────────────────────────────────');
 
@@ -323,6 +359,13 @@ for (const filePath of markdownFiles) {
                     '. In EDS, a trailing slash (e.g., "./subdir/") resolves to' +
                     ' "subdir/index.md", while no trailing slash (e.g., "./page")' +
                     ' resolves to "page.md".';
+            }
+        }
+
+        // Filter out messages from rules skipped for this file's path
+        for (let i = result.messages.length - 1; i >= 0; i--) {
+            if (isRuleSkipped(result.messages[i].ruleId, filePath)) {
+                result.messages.splice(i, 1);
             }
         }
 
