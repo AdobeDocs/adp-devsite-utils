@@ -104,7 +104,7 @@ const remarkLintNoBlockInList = await import(path.join(adpDevsiteUtilsDir, 'lint
 const remarkLintNoUnescapedOpeningCurlyBraces = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-unescaped-opening-curly-braces.js'))
 const remarkLintNoAltTextForImage = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-alt-text-for-image.js'))
 const remarkLintBigImage = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-big-image.js'))
-const remarkLintNoKebabInFilename = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-kebab-in-filename.js'))
+const remarkLintNoUnsanitizedPathSegments = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-unsanitized-path-segments.js'))
 const remarkLintInternalLinkExtension = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-internal-link-extension.js'))
 const remarkLintAnchorLinkExtension = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-anchor-link-extension.js'))
 const remarkLintNoDetailsHtml = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-details-html.js'))
@@ -184,7 +184,7 @@ function createProcessor(includeFrontmatterCheck) {
       .use(remarkLintNoBracketInTable.default, ['error'])
       .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error'])
       .use(remarkLintNoAltTextForImage.default, ['warning'])
-      .use(remarkLintNoKebabInFilename.default, ['error'])
+      .use(remarkLintNoUnsanitizedPathSegments.default, ['error'])
       .use(remarkLintInternalLinkExtension.default, ['error'])
       .use(remarkLintAnchorLinkExtension.default, ['error'])
       .use(remarkLintNoHorizontalLines.default, ['error']);
