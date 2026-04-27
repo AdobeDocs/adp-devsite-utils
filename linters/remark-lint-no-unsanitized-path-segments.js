@@ -7,6 +7,16 @@ const POSITION = {
   end: { line: 1, column: 1 }
 }
 
+// Mirrors EDS @adobe/helix-shared-string sanitizeName exactly
+function sanitizeName(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 function report(file, message, severity) {
   if (severity === 'error') {
     file.fail(message, POSITION, RULE_ID)
@@ -16,19 +26,9 @@ function report(file, message, severity) {
 }
 
 function validateSegment(segment, label, file, severity) {
-  const validCharsRegex = /^[a-z0-9_-]+$/
-  if (!validCharsRegex.test(segment)) {
-    const invalidChars = segment.match(/[^a-z0-9_-]/g) || []
-    const unique = [...new Set(invalidChars)]
-    report(file, `${label} "${segment}" contains invalid character(s): ${unique.map(c => `"${c}"`).join(', ')}. Only lowercase letters (a-z), numbers (0-9), hyphens (-), and underscores (_) are allowed.`, severity)
-  }
-
-  if (/--/.test(segment)) {
-    report(file, `${label} "${segment}" contains consecutive dashes (--). EDS normalizes consecutive dashes into a single dash, which will cause deployment failures.`, severity)
-  }
-
-  if (segment.startsWith('-') || segment.endsWith('-')) {
-    report(file, `${label} "${segment}" has a leading or trailing dash. EDS strips leading/trailing dashes, which will cause deployment failures.`, severity)
+  const sanitized = sanitizeName(segment)
+  if (sanitized !== segment) {
+    report(file, `${label} "${segment}" is not EDS-safe. EDS will normalize it to "${sanitized}", causing a deployment mismatch. Rename it to "${sanitized}".`, severity)
   }
 }
 
@@ -51,7 +51,7 @@ const remarkLintNoUnsanitizedPathSegments = (severity = 'warning') => {
       if (srcPagesIndex !== -1) {
         const relativePath = file.path.slice(srcPagesIndex + srcPagesMarker.length + path.sep.length)
         const segments = relativePath.split(path.sep)
-        segments.pop() // remove filename (already checked above)
+        segments.pop()
         for (const dir of segments) {
           if (dir) {
             validateSegment(dir, 'Directory', file, actualSeverity)
