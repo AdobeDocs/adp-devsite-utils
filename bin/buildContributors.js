@@ -196,12 +196,12 @@ try {
   }
 
   const { owner, repo } = repoInfo;
-  logStep(`Repository`, `${owner}/${repo}`);
+  logStep('Repository', `${owner}/${repo}`);
 
   const token = getToken();
-  const headers = { 'Accept': 'application/vnd.github+json' };
+  const headers = { Accept: 'application/vnd.github+json' };
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   } else {
     logStep('No credentials found — attempting unauthenticated API calls');
     logStep('This works for public repos (60 req/hr limit)');
@@ -254,13 +254,13 @@ try {
     }
   }
 
-  logStep(`Files to process`, `${filesToProcess.length}`);
+  logStep('Files to process', `${filesToProcess.length}`);
 
   const newData = [];
   let apiFailed = false;
 
   for (const file of filesToProcess) {
-    logStep(`Processing`, file);
+    logStep('Processing', file);
     const result = await getFileContributors(owner, repo, file, headers, branch);
 
     if (!result) {
