@@ -124,7 +124,7 @@ function getDeletedMarkdownFiles(baseBranch) {
   }
 }
 
-// example: src/pages/about/index.md -> about/
+// example: src/pages/about/index.md -> /about/
 function fileToPagePath(file) {
   return file
     .replace(/^src\/pages/, '')
