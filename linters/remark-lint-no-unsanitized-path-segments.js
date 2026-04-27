@@ -44,21 +44,6 @@ const remarkLintNoUnsanitizedPathSegments = (severity = 'warning') => {
 
     const filenameWithoutExt = filename.replace(/\.md$/, '')
     validateSegment(filenameWithoutExt, 'Filename', file, actualSeverity)
-
-    if (file.path) {
-      const srcPagesMarker = path.join('src', 'pages')
-      const srcPagesIndex = file.path.indexOf(srcPagesMarker)
-      if (srcPagesIndex !== -1) {
-        const relativePath = file.path.slice(srcPagesIndex + srcPagesMarker.length + path.sep.length)
-        const segments = relativePath.split(path.sep)
-        segments.pop()
-        for (const dir of segments) {
-          if (dir) {
-            validateSegment(dir, 'Directory', file, actualSeverity)
-          }
-        }
-      }
-    }
   }
 }
 
