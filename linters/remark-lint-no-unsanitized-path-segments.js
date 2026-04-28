@@ -32,7 +32,7 @@ function validateSegment(segment, label, file, severity) {
   }
 }
 
-const remarkLintNoUnsanitizedPathSegments = (severity = 'warning') => {
+const remarkLintNoUnsanitizedFilename = (severity = 'warning') => {
   return (tree, file) => {
     const actualSeverity = Array.isArray(severity) ? severity[0] : severity
 
