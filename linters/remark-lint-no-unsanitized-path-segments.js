@@ -47,4 +47,4 @@ const remarkLintNoUnsanitizedFilename = (severity = 'warning') => {
   }
 }
 
-export default remarkLintNoUnsanitizedPathSegments
+export default remarkLintNoUnsanitizedFilename
