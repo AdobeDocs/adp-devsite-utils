@@ -1,6 +1,6 @@
 import path from 'path'
 
-const RULE_ID = 'remark-lint:no-unsanitized-path-segments'
+const RULE_ID = 'remark-lint:no-unsanitized-filename'
 
 const POSITION = {
   start: { line: 1, column: 1 },
