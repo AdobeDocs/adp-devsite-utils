@@ -220,7 +220,7 @@ function createProcessor(includeFrontmatterCheck) {
       .use(remarkLintNoBracketInTable.default, ['error'])
       .use(remarkLintNoUnescapedOpeningCurlyBraces.default, ['error'])
       .use(remarkLintNoAltTextForImage.default, ['warning'])
-      .use(remarkLintNoUnsanitizedPathSegments.default, ['error'])
+      .use(remarkLintNoUnsanitizedFilename.default, ['error'])
       .use(remarkLintInternalLinkExtension.default, ['error'])
       .use(remarkLintAnchorLinkExtension.default, ['error'])
       .use(remarkLintNoHorizontalLines.default, ['error']);
