@@ -41,7 +41,8 @@ try {
 
     function toEdsCase(str) {
         const isValid = Boolean(/^([a-z0-9-]*)$/.test(str));
-        return isValid ? str : toKebabCase(str);
+        const result = isValid ? str : toKebabCase(str);
+        return result.replace(/-{2,}/g, '-');
     }
 
     function toUrl(str) {
