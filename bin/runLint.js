@@ -26,6 +26,56 @@ const adpDevsiteUtilsDir = path.dirname(__dirname);
 
 // Get the current working directory (target repo where the command is run)
 const targetDir = process.cwd();
+const srcPagesDir = path.join(targetDir, 'src', 'pages');
+
+/** @returns {boolean} true if candidate is srcPagesDir or a subdirectory of it */
+function isDirInside(parent, candidate) {
+    const rel = path.relative(parent, candidate);
+    return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+}
+
+/** Collect `--path <dir>` values (relative to repo root); may repeat for multiple roots */
+function parseLintPathArgs(argv) {
+    const paths = [];
+    for (let i = 0; i < argv.length; i++) {
+        if (argv[i] === '--path' && argv[i + 1]) {
+            paths.push(argv[i + 1]);
+            i++;
+        }
+    }
+    return paths;
+}
+
+/**
+ * Resolves user-supplied paths to absolute lint roots under src/pages.
+ * @returns {{ roots: string[], displayPaths: string[] }}
+ */
+function resolveLintRoots(userRelativePaths, targetDir, srcPagesDir) {
+    const srcResolved = path.resolve(srcPagesDir);
+    if (userRelativePaths.length === 0) {
+        return { roots: [srcResolved], displayPaths: [] };
+    }
+    const roots = [];
+    const displayPaths = [];
+    for (const raw of userRelativePaths) {
+        const resolved = path.resolve(targetDir, raw);
+        if (!fs.existsSync(resolved)) {
+            log(`❌ --path not found: ${raw}`, 'error');
+            process.exit(1);
+        }
+        if (!fs.statSync(resolved).isDirectory()) {
+            log(`❌ --path must be a directory: ${raw}`, 'error');
+            process.exit(1);
+        }
+        if (!isDirInside(srcResolved, resolved)) {
+            log(`❌ --path must be under src/pages (got: ${raw})`, 'error');
+            process.exit(1);
+        }
+        roots.push(resolved);
+        displayPaths.push(path.relative(targetDir, resolved));
+    }
+    return { roots, displayPaths };
+}
 
 // Read lint configuration from content repo's package.json
 let skipUrlPatterns = [];
@@ -91,6 +141,13 @@ const internalLinksOnly = process.argv.includes('--internal-links-only');
 const skipDeadLinks = process.argv.includes('--skip-dead-links');
 const linksOnlyMode = externalLinksOnly || internalLinksOnly;
 
+const lintPathArgValues = parseLintPathArgs(process.argv);
+const { roots: lintRoots, displayPaths: lintPathDisplay } = resolveLintRoots(
+    lintPathArgValues,
+    targetDir,
+    srcPagesDir,
+);
+
 logSection('TEST LINT');
 
 // Determine lint mode for report
@@ -108,6 +165,10 @@ if (linksOnlyMode) {
     logStep('Testing remark rules with JavaScript API');
 }
 
+if (lintPathDisplay.length > 0) {
+    logStep(`Restricting markdown lint to ${lintPathDisplay.length} folder(s): ${lintPathDisplay.join(', ')}`);
+}
+
 // Add report header
 addToReport('═══════════════════════════════════════════════════════════════');
 addToReport('                     LINTER REPORT');
@@ -116,6 +177,9 @@ addToReport('');
 addToReport(`Generated: ${new Date().toISOString()}`);
 addToReport(`Mode: ${lintMode}`);
 addToReport(`Target Directory: ${targetDir}`);
+if (lintPathDisplay.length > 0) {
+    addToReport(`Markdown lint scope: ${lintPathDisplay.join(', ')}`);
+}
 const reportSkipRuleNames = Object.keys(skipRulesConfig);
 if (reportSkipRuleNames.length > 0) {
     addToReport(`Skipped Rules:`);
@@ -147,8 +211,6 @@ const remarkLintNoDetailsHtml = await import(path.join(adpDevsiteUtilsDir, 'lint
 const remarkLintNoBracketInTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-bracket-in-table.js'))
 const remarkLintNoHorizontalLines = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-horizontal-lines.js'))
 const lintNoJsonInSrcPages = await import(path.join(adpDevsiteUtilsDir, 'linters', 'lint-no-json-in-src-pages.js'));
-// Find all markdown files in src/pages
-const srcPagesDir = path.join(targetDir, 'src', 'pages');
 
 // Plugin that prevents file.fail() from throwing so all errors are collected
 function remarkCollectAllErrors() {
@@ -275,10 +337,25 @@ function findMarkdownFiles(dir) {
     return files;
 }
 
-const markdownFiles = findMarkdownFiles(srcPagesDir);
+function collectMarkdownFromRoots(roots) {
+    const unique = new Set();
+    for (const root of roots) {
+        for (const file of findMarkdownFiles(root)) {
+            unique.add(file);
+        }
+    }
+    return [...unique].sort();
+}
+
+const markdownFiles = collectMarkdownFromRoots(lintRoots);
 
 if (markdownFiles.length === 0) {
-    log('No markdown files found in src/pages', 'warn');
+    log(
+        lintPathDisplay.length > 0
+            ? `No markdown files found under: ${lintPathDisplay.join(', ')}`
+            : 'No markdown files found in src/pages',
+        'warn',
+    );
     process.exit(0);
 }
 
