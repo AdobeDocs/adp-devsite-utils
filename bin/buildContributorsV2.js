@@ -79,8 +79,8 @@ function getCurrentBranch() {
 
 function getBaseBranch() {
   // for github actions
-  if (process.env.GITHUB_BASE_REF) {
-    return `origin/${process.env.GITHUB_BASE_REF}`;
+  if (process.env.BASE_SHA) {
+    return process.env.BASE_SHA;
   }
 
   // for local development
@@ -254,65 +254,28 @@ try {
     }
   }
 
-  logStep('Files to process', `${filesToProcess.length}`);
-
-  const newData = [];
-  let apiFailed = false;
+  const results = [];
 
   for (const file of filesToProcess) {
-    logStep('Processing', file);
-    const result = await getFileContributors(owner, repo, file, headers, branch);
+    const contributors = await getFileContributors(owner, repo, file, headers, branch);
+    if (!contributors) continue;
 
-    if (!result) {
-      if (!token) {
-        apiFailed = true;
-        break;
-      }
-      verbose(`No contributors found for ${file}`);
-      continue;
-    }
-
-    const page = fileToPagePath(file);
-    
-
-    newData.push({
-      page,
-      ...result,
+    results.push({
+      path: fileToPagePath(file),
+      avatars: contributors.avatars,
+      lastUpdated: contributors.lastUpdated,
     });
   }
 
-  if (apiFailed && newData.length === 0 && existingData.length === 0) {
-    log('API calls failed (likely a private repo without credentials). Using existing contributors.json.', 'warn');
-    process.exit(0);
-  }
+  const preservedEntries = existingData.filter((entry) => !deletedPaths.has(entry.path) && !results.some((result) => result.path === entry.path));
+  const finalData = FULL_BUILD ? results : [...preservedEntries, ...results];
 
-  const getEntryPage = (entry) => entry.page;
-  const updatedPages = new Set(newData.map((entry) => entry.page));
-  const mergedData = [
-    ...existingData.filter((entry) => !updatedPages.has(getEntryPage(entry)) && !deletedPaths.has(getEntryPage(entry))),
-    ...newData,
-  ].sort((a, b) => (getEntryPage(a)).localeCompare(getEntryPage(b)));
+  finalData.sort((a, b) => a.path.localeCompare(b.path));
 
-  const contributors = {
-    total: mergedData.length,
-    offset: 0,
-    limit: mergedData.length,
-    data: mergedData,
-    ':type': 'sheet',
-  };
-
-  verbose(`Writing contributors file to: ${CONTRIBUTORS_FILE_PATH}`);
-  const contributorsContent = JSON.stringify(contributors);
-  fs.writeFileSync(CONTRIBUTORS_FILE_PATH, contributorsContent);
-  verbose(`Contributors file written successfully (${contributorsContent.length} characters)`);
-  console.log(`Generated file: ${CONTRIBUTORS_FILE_PATH}`);
-
-} catch (err) {
-  if (err?.cause?.code === 'ENOTFOUND' || err?.message?.includes('fetch failed')) {
-    log('Network error — could not reach GitHub API. Using existing contributors.json if available.', 'warn');
-    process.exit(0);
-  }
-  log(`Contributors build failed: ${err.message}`, 'error');
-  console.error(err);
+  fs.writeFileSync(CONTRIBUTORS_FILE_PATH, `${JSON.stringify({ data: finalData }, null, 2)}\n`);
+  logStep('Updated contributors file', CONTRIBUTORS_FILE_PATH);
+  logStep('Total entries', `${finalData.length}`);
+} catch (error) {
+  log(error.stack || error.message, 'error');
   process.exit(1);
 }
