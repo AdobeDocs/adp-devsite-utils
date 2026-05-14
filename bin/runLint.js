@@ -181,14 +181,15 @@ function createProcessor(includeFrontmatterCheck) {
     if (externalLinksOnly) {
       processors = processors
         .use(remarkLintNoDeadUrls, {
-          skipUrlPatterns,
+          skipUrlPatterns: [...skipUrlPatterns, /^mailto:/],
           deadOrAliveOptions: {
-            maxRetries: 0, // Disable retries
-            sleep: 0, // Disable sleep
+            maxRetries: 0,
+            sleep: 0,
+            checkAnchor: false,
             https: {
               rejectUnauthorized: false, // Don't fail on SSL cert issues
             },
-            followRedirect: true, // Allow redirects (don't treat as dead links)
+            followRedirects: true, // Allow redirects (don't treat as dead links)
           },
         });
     }
@@ -229,14 +230,15 @@ function createProcessor(includeFrontmatterCheck) {
     if (!skipDeadLinks) {
       processors = processors
         .use(remarkLintNoDeadUrls, {
-            skipUrlPatterns,
+            skipUrlPatterns: [...skipUrlPatterns, /^mailto:/],
             deadOrAliveOptions: {
-                maxRetries: 0, // Disable retries
-                sleep: 0, // Disable sleep
+                maxRetries: 0,
+                sleep: 0,
+                checkAnchor: false,
                 https: {
                     rejectUnauthorized: false, // Don't fail on SSL cert issues
                 },
-                followRedirect: true, // Allow redirects (don't treat as dead links)
+                followRedirects: true, // Allow redirects (don't treat as dead links)
             },
         });
     }
