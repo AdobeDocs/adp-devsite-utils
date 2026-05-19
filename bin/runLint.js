@@ -181,11 +181,10 @@ function createProcessor(includeFrontmatterCheck) {
     if (externalLinksOnly) {
       processors = processors
         .use(remarkLintNoDeadUrls, {
-          skipUrlPatterns: [...skipUrlPatterns, /^mailto:/],
+          skipUrlPatterns: [...skipUrlPatterns, /^mailto:/, /^#/],
           deadOrAliveOptions: {
             maxRetries: 0,
             sleep: 0,
-            checkAnchor: false,
             https: {
               rejectUnauthorized: false, // Don't fail on SSL cert issues
             },
@@ -230,11 +229,10 @@ function createProcessor(includeFrontmatterCheck) {
     if (!skipDeadLinks) {
       processors = processors
         .use(remarkLintNoDeadUrls, {
-            skipUrlPatterns: [...skipUrlPatterns, /^mailto:/],
+            skipUrlPatterns: [...skipUrlPatterns, /^mailto:/, /^#/],
             deadOrAliveOptions: {
                 maxRetries: 0,
                 sleep: 0,
-                checkAnchor: false,
                 https: {
                     rejectUnauthorized: false, // Don't fail on SSL cert issues
                 },
