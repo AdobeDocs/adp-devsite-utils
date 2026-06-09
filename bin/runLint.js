@@ -275,7 +275,10 @@ function findMarkdownFiles(dir) {
     return files;
 }
 
-const markdownFiles = findMarkdownFiles(srcPagesDir);
+const cliFiles = process.argv.slice(2).filter(a => !a.startsWith('-'));
+const markdownFiles = cliFiles.length > 0
+    ? cliFiles.map(f => path.resolve(targetDir, f))
+    : findMarkdownFiles(srcPagesDir);
 
 if (markdownFiles.length === 0) {
     log('No markdown files found in src/pages', 'warn');
