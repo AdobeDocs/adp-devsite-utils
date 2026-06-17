@@ -275,7 +275,10 @@ function findMarkdownFiles(dir) {
     return files;
 }
 
-const markdownFiles = findMarkdownFiles(srcPagesDir);
+const cliFiles = process.argv.slice(2).filter(a => !a.startsWith('-'));
+const markdownFiles = cliFiles.length > 0
+    ? cliFiles.map(f => path.resolve(targetDir, f))
+    : findMarkdownFiles(srcPagesDir);
 
 if (markdownFiles.length === 0) {
     log('No markdown files found in src/pages', 'warn');
@@ -294,8 +297,8 @@ let hasFatalErrors = false;
 let totalErrors = 0;
 let totalWarnings = 0;
 
-// Pre-check: detect JSON files in src/pages/
-const jsonCheckResult = lintNoJsonInSrcPages.default(srcPagesDir, targetDir);
+// Pre-check: detect JSON files in src/pages/ (only in full-scan mode; scoped runs check changed files only)
+const jsonCheckResult = cliFiles.length === 0 ? lintNoJsonInSrcPages.default(srcPagesDir, targetDir) : { messages: [] };
 if (jsonCheckResult.messages.length > 0) {
     addToReport('───────────────────────────────────────────────────────────────');
     addToReport('📁 JSON FILES IN src/pages/');
