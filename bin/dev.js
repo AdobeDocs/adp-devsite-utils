@@ -44,4 +44,7 @@ app.use(
 
 app.listen(PORT, () => {
   console.debug(`Docs dev server is running on port ${PORT}`);
+}).on('error', (err) => {
+  console.error(err);
+  process.exit(1);
 });
