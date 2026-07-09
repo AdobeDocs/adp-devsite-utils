@@ -183,8 +183,15 @@ function createProcessor(includeFrontmatterCheck) {
         .use(remarkLintNoDeadUrls, {
           skipUrlPatterns: [...skipUrlPatterns, /^mailto:/, /^#/],
           deadOrAliveOptions: {
-            maxRetries: 0,
-            sleep: 0,
+            // A single transient blip (rate limit, cold CDN edge, brief network
+            // hiccup) would otherwise be reported as a dead link with zero
+            // chance to recover, so allow one retry with a short backoff.
+            maxRetries: 1,
+            sleep: () => 1000,
+            // Under concurrent load (10 URLs checked in parallel per file),
+            // some requests queue long enough to approach the default 3s
+            // timeout even though the target is alive; give them more room.
+            timeout: 10000,
             https: {
               rejectUnauthorized: false, // Don't fail on SSL cert issues
             },
@@ -231,8 +238,17 @@ function createProcessor(includeFrontmatterCheck) {
         .use(remarkLintNoDeadUrls, {
             skipUrlPatterns: [...skipUrlPatterns, /^mailto:/, /^#/],
             deadOrAliveOptions: {
-                maxRetries: 0,
-                sleep: 0,
+                // A single transient blip (rate limit, cold CDN edge, brief
+                // network hiccup) would otherwise be reported as a dead link
+                // with zero chance to recover, so allow one retry with a
+                // short backoff.
+                maxRetries: 1,
+                sleep: () => 1000,
+                // Under concurrent load (10 URLs checked in parallel per
+                // file), some requests queue long enough to approach the
+                // default 3s timeout even though the target is alive; give
+                // them more room.
+                timeout: 10000,
                 https: {
                     rejectUnauthorized: false, // Don't fail on SSL cert issues
                 },
@@ -368,6 +384,17 @@ for (const filePath of markdownFiles) {
         // Filter out messages from rules skipped for this file's path
         for (let i = result.messages.length - 1; i >= 0; i--) {
             if (isRuleSkipped(result.messages[i].ruleId, filePath)) {
+                result.messages.splice(i, 1);
+            }
+        }
+
+        // Suppress "redirecting URL" advisories from no-dead-urls: the URL was
+        // confirmed alive (dead-or-alive followed the redirect successfully),
+        // matching the `followRedirects: true` config below which is meant to
+        // treat redirects as non-issues rather than flag them.
+        for (let i = result.messages.length - 1; i >= 0; i--) {
+            const message = result.messages[i];
+            if (message.ruleId === 'no-dead-urls' && /^Unexpected redirecting URL/.test(message.message)) {
                 result.messages.splice(i, 1);
             }
         }
