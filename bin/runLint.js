@@ -10,8 +10,37 @@ import remarkLintNoDeadUrls from 'remark-lint-no-dead-urls';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'node:fs';
+import { setGlobalDispatcher, getGlobalDispatcher } from 'undici';
 
 const { log, verbose, logSection, logStep } = await import('./scriptUtils.js');
+
+// dead-or-alive (as of 1.0.5) sends its user agent under the header key
+// `userAgent` instead of `user-agent`, so the value is silently dropped and
+// the real `user-agent` header falls back to undici's default (`undici`).
+// That trivially identifies our dead-link checks as bot/script traffic to
+// any UA-based bot mitigation (e.g. Akamai, which fronts business.adobe.com),
+// causing intermittent false "dead" reports on alive URLs.
+//
+// dead-or-alive has no public option to pass through a `headers` object, so
+// we can't fix this by configuration alone. Rather than patching dead-or-alive's
+// source in node_modules (which is sensitive to npm's dependency-hoisting
+// decisions and previously broke `npx github:.../runLint` for some installs),
+// we fix the header at the network layer via undici's global dispatcher.
+// This works regardless of where dead-or-alive's own copy of undici lands in
+// node_modules, because undici stores its global dispatcher on a well-known
+// `globalThis` symbol shared by every copy of the package in the process.
+const REAL_USER_AGENT =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+
+function fixUserAgentInterceptor(dispatch) {
+    return function dispatchWithFixedUserAgent(opts, handler) {
+        const headers = { ...(opts.headers || {}) };
+        headers['user-agent'] = REAL_USER_AGENT;
+        return dispatch({ ...opts, headers }, handler);
+    };
+}
+
+setGlobalDispatcher(getGlobalDispatcher().compose(fixUserAgentInterceptor));
 
 // Report collection for linter-report.txt
 const reportLines = [];
@@ -183,8 +212,15 @@ function createProcessor(includeFrontmatterCheck) {
         .use(remarkLintNoDeadUrls, {
           skipUrlPatterns: [...skipUrlPatterns, /^mailto:/, /^#/],
           deadOrAliveOptions: {
-            maxRetries: 0,
-            sleep: 0,
+            // A single transient blip (rate limit, cold CDN edge, brief network
+            // hiccup) would otherwise be reported as a dead link with zero
+            // chance to recover, so allow one retry with a short backoff.
+            maxRetries: 1,
+            sleep: () => 1000,
+            // Under concurrent load (10 URLs checked in parallel per file),
+            // some requests queue long enough to approach the default 3s
+            // timeout even though the target is alive; give them more room.
+            timeout: 10000,
             https: {
               rejectUnauthorized: false, // Don't fail on SSL cert issues
             },
@@ -231,8 +267,17 @@ function createProcessor(includeFrontmatterCheck) {
         .use(remarkLintNoDeadUrls, {
             skipUrlPatterns: [...skipUrlPatterns, /^mailto:/, /^#/],
             deadOrAliveOptions: {
-                maxRetries: 0,
-                sleep: 0,
+                // A single transient blip (rate limit, cold CDN edge, brief
+                // network hiccup) would otherwise be reported as a dead link
+                // with zero chance to recover, so allow one retry with a
+                // short backoff.
+                maxRetries: 1,
+                sleep: () => 1000,
+                // Under concurrent load (10 URLs checked in parallel per
+                // file), some requests queue long enough to approach the
+                // default 3s timeout even though the target is alive; give
+                // them more room.
+                timeout: 10000,
                 https: {
                     rejectUnauthorized: false, // Don't fail on SSL cert issues
                 },
@@ -335,6 +380,17 @@ for (const filePath of markdownFiles) {
 
         // Process the file with remark (pass path for linters that need filename access)
         const result = await processor.process({ path: filePath, value: content });
+
+        // Suppress "redirecting URL" advisories from no-dead-urls: the URL was
+        // confirmed alive (dead-or-alive followed the redirect successfully),
+        // matching the `followRedirects: true` config above which is meant to
+        // treat redirects as non-issues rather than flag them.
+        for (let i = result.messages.length - 1; i >= 0; i--) {
+            const message = result.messages[i];
+            if (message.ruleId === 'no-dead-urls' && /^Unexpected redirecting URL/.test(message.message)) {
+                result.messages.splice(i, 1);
+            }
+        }
 
         // Suppress false positive missing-file warnings for files that exist
         // in the repo but outside src/pages/ 

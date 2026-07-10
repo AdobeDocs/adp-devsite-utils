@@ -28,7 +28,8 @@
     "remark-lint-no-dead-urls": "^2.0.1",
     "remark-lint-no-hidden-table-cell": "^1.0.1",
     "remark-lint-no-multiple-toplevel-headings": "^4.0.1",
-    "remark-validate-links": "^13.1.0"
+    "remark-validate-links": "^13.1.0",
+    "undici": "^8.0.0"
   },
   "overrides": {
     "glob": "^13.0.0"
