@@ -9,8 +9,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "list": "node index.js",
-    "postinstall": "patch-package"
+    "list": "node index.js"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -21,7 +20,6 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "glob": "^13.0.0",
-    "patch-package": "^8.0.1",
     "remark": "^15.0.1",
     "remark-cli": "^12.0.1",
     "remark-frontmatter": "^5.0.0",
