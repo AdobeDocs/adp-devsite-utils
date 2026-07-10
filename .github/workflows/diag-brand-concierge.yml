@@ -8,48 +8,67 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Runner egress IP
+        continue-on-error: true
         run: |
+          set +e
           echo "=== Runner public IP ==="
-          curl -s https://ifconfig.me || true
+          curl -s https://ifconfig.me
           echo
 
       - name: Raw curl with real browser User-Agent
+        continue-on-error: true
         run: |
+          set +e
           echo "=== curl with browser UA ==="
           curl -sv -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" \
             "https://business.adobe.com/products/brand-concierge.html" \
             -o /tmp/browser-ua-body.html \
             -w "\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nEFFECTIVE_URL:%{url_effective}\n" \
-            2>/tmp/browser-ua-verbose.log || true
+            2>/tmp/browser-ua-verbose.log
           echo "--- response headers/verbose (curl -v stderr) ---"
-          cat /tmp/browser-ua-verbose.log
+          cat /tmp/browser-ua-verbose.log 2>/dev/null
           echo "--- first 500 bytes of body ---"
-          head -c 500 /tmp/browser-ua-body.html
+          head -c 500 /tmp/browser-ua-body.html 2>/dev/null
           echo
 
       - name: Raw curl with undici default User-Agent
+        continue-on-error: true
         run: |
+          set +e
           echo "=== curl with bare 'undici' UA (the buggy default) ==="
           curl -sv -A "undici" \
             "https://business.adobe.com/products/brand-concierge.html" \
             -o /tmp/undici-ua-body.html \
             -w "\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nEFFECTIVE_URL:%{url_effective}\n" \
-            2>/tmp/undici-ua-verbose.log || true
+            2>/tmp/undici-ua-verbose.log
           echo "--- response headers/verbose (curl -v stderr) ---"
-          cat /tmp/undici-ua-verbose.log
+          cat /tmp/undici-ua-verbose.log 2>/dev/null
           echo "--- first 500 bytes of body ---"
-          head -c 500 /tmp/undici-ua-body.html
+          head -c 500 /tmp/undici-ua-body.html 2>/dev/null
           echo
 
-      - name: Set up isolated Node project
+      - name: Repeat browser-UA curl 5x (check consistency vs flakiness)
+        continue-on-error: true
         run: |
+          set +e
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" -w "%{http_code}" "https://business.adobe.com/products/brand-concierge.html")
+            echo "attempt $i: HTTP_CODE=$code"
+          done
+
+      - name: Set up isolated Node project
+        continue-on-error: true
+        run: |
+          set +e
           mkdir -p /tmp/diag && cd /tmp/diag
           npm init -y >/dev/null
           npm install --no-save dead-or-alive undici 2>&1 | tail -5
           node -v
 
       - name: dead-or-alive check WITHOUT the User-Agent fix (baseline, reproduces #94's original bug)
+        continue-on-error: true
         run: |
+          set +e
           cd /tmp/diag
           cat > baseline.mjs << 'EOF'
           import { deadOrAlive } from 'dead-or-alive';
@@ -60,10 +79,12 @@ jobs:
           });
           console.log('BASELINE RESULT:', JSON.stringify(result, null, 2));
           EOF
-          node baseline.mjs || true
+          node baseline.mjs
 
       - name: dead-or-alive check WITH the User-Agent fix (PR #96's undici interceptor)
+        continue-on-error: true
         run: |
+          set +e
           cd /tmp/diag
           cat > fixed.mjs << 'EOF'
           import { setGlobalDispatcher, getGlobalDispatcher } from 'undici';
@@ -90,10 +111,12 @@ jobs:
           });
           console.log('FIXED RESULT:', JSON.stringify(result, null, 2));
           EOF
-          node fixed.mjs || true
+          node fixed.mjs
 
       - name: Raw undici fetch with full response inspection (fixed UA)
+        continue-on-error: true
         run: |
+          set +e
           cd /tmp/diag
           cat > raw-fetch.mjs << 'EOF'
           import { fetch } from 'undici';
@@ -112,4 +135,14 @@ jobs:
             console.log(err.stack);
           }
           EOF
-          node raw-fetch.mjs || true
+          node raw-fetch.mjs
+
+      - name: Raw undici fetch forcing HTTP/1.1 (rule out HTTP/2 fingerprinting)
+        continue-on-error: true
+        run: |
+          set +e
+          echo "=== curl forced to HTTP/1.1 with browser UA ==="
+          curl -s --http1.1 -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" \
+            "https://business.adobe.com/products/brand-concierge.html" \
+            -o /dev/null \
+            -w "HTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\n"
