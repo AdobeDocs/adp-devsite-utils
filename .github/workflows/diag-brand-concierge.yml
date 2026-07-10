@@ -1,6 +1,7 @@
 name: Diagnose brand-concierge dead-link false positive
 on:
-  workflow_dispatch:
+  pull_request:
+    branches: [main]
 
 jobs:
   diagnose:
