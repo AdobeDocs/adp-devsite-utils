@@ -1,0 +1,114 @@
+name: Diagnose brand-concierge dead-link false positive
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Runner egress IP
+        run: |
+          echo "=== Runner public IP ==="
+          curl -s https://ifconfig.me || true
+          echo
+
+      - name: Raw curl with real browser User-Agent
+        run: |
+          echo "=== curl with browser UA ==="
+          curl -sv -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" \
+            "https://business.adobe.com/products/brand-concierge.html" \
+            -o /tmp/browser-ua-body.html \
+            -w "\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nEFFECTIVE_URL:%{url_effective}\n" \
+            2>/tmp/browser-ua-verbose.log || true
+          echo "--- response headers/verbose (curl -v stderr) ---"
+          cat /tmp/browser-ua-verbose.log
+          echo "--- first 500 bytes of body ---"
+          head -c 500 /tmp/browser-ua-body.html
+          echo
+
+      - name: Raw curl with undici default User-Agent
+        run: |
+          echo "=== curl with bare 'undici' UA (the buggy default) ==="
+          curl -sv -A "undici" \
+            "https://business.adobe.com/products/brand-concierge.html" \
+            -o /tmp/undici-ua-body.html \
+            -w "\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nEFFECTIVE_URL:%{url_effective}\n" \
+            2>/tmp/undici-ua-verbose.log || true
+          echo "--- response headers/verbose (curl -v stderr) ---"
+          cat /tmp/undici-ua-verbose.log
+          echo "--- first 500 bytes of body ---"
+          head -c 500 /tmp/undici-ua-body.html
+          echo
+
+      - name: Set up isolated Node project
+        run: |
+          mkdir -p /tmp/diag && cd /tmp/diag
+          npm init -y >/dev/null
+          npm install --no-save dead-or-alive undici 2>&1 | tail -5
+          node -v
+
+      - name: dead-or-alive check WITHOUT the User-Agent fix (baseline, reproduces #94's original bug)
+        run: |
+          cd /tmp/diag
+          cat > baseline.mjs << 'EOF'
+          import { deadOrAlive } from 'dead-or-alive';
+          const result = await deadOrAlive('https://business.adobe.com/products/brand-concierge.html', {
+            timeout: 10000,
+            maxRetries: 1,
+            https: { rejectUnauthorized: false },
+          });
+          console.log('BASELINE RESULT:', JSON.stringify(result, null, 2));
+          EOF
+          node baseline.mjs || true
+
+      - name: dead-or-alive check WITH the User-Agent fix (PR #96's undici interceptor)
+        run: |
+          cd /tmp/diag
+          cat > fixed.mjs << 'EOF'
+          import { setGlobalDispatcher, getGlobalDispatcher } from 'undici';
+          import { deadOrAlive } from 'dead-or-alive';
+
+          const REAL_USER_AGENT =
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+
+          function fixUserAgentInterceptor(dispatch) {
+            return function dispatchWithFixedUserAgent(opts, handler) {
+              const headers = { ...(opts.headers || {}) };
+              headers['user-agent'] = REAL_USER_AGENT;
+              console.log('OUTGOING REQUEST HEADERS:', JSON.stringify(headers));
+              return dispatch({ ...opts, headers }, handler);
+            };
+          }
+
+          setGlobalDispatcher(getGlobalDispatcher().compose(fixUserAgentInterceptor));
+
+          const result = await deadOrAlive('https://business.adobe.com/products/brand-concierge.html', {
+            timeout: 10000,
+            maxRetries: 1,
+            https: { rejectUnauthorized: false },
+          });
+          console.log('FIXED RESULT:', JSON.stringify(result, null, 2));
+          EOF
+          node fixed.mjs || true
+
+      - name: Raw undici fetch with full response inspection (fixed UA)
+        run: |
+          cd /tmp/diag
+          cat > raw-fetch.mjs << 'EOF'
+          import { fetch } from 'undici';
+          try {
+            const res = await fetch('https://business.adobe.com/products/brand-concierge.html', {
+              headers: {
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+              },
+            });
+            console.log('STATUS:', res.status);
+            console.log('HEADERS:', JSON.stringify([...res.headers.entries()], null, 2));
+            const text = await res.text();
+            console.log('BODY (first 1000 chars):', text.slice(0, 1000));
+          } catch (err) {
+            console.log('FETCH THREW:', err.message);
+            console.log(err.stack);
+          }
+          EOF
+          node raw-fetch.mjs || true
