@@ -19,8 +19,8 @@ try {
     { key: 'get-credentials', file: 'src/pages/credential/getcredential.json' },
     { key: 'site-wide-banner', file: 'src/pages/site-wide-banner.json' },
     { key: 'code-playground', file : 'src/pages/code-playground.json'},
-    { key: 'releases', file : 'src/pages/releases.yaml'},
-    { key: 'releases-metadata', file : 'src/pages/releases-metadata.yaml'}
+    { key: 'changelog-data', file : 'src/pages/changelog-data.yml'},
+    { key: 'changelog-settings', file : 'src/pages/changelog-settings.yml'}
   ];
 
   const data = siteMetadataEntries.map(({ key, file }) => {
