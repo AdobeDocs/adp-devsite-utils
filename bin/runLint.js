@@ -164,7 +164,7 @@ const remarkLintSelfCloseComponent = await import(path.join(adpDevsiteUtilsDir, 
 const remarkLintNoHtmlTag = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-html-tags.js'));
 const remarkLintNoCodeTable = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-code-in-table.js'));
 const remarkLintNoHtmlComments = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-html-comments.js'));
-const remarkLintNoBrInTables = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-br-in-tables.js'))
+const remarkLintNoUnescapedBr = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-unescaped-br.js'))
 const remarkLintNoBlockInList = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-block-in-list.js'))
 const remarkLintNoUnescapedOpeningCurlyBraces = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-unescaped-opening-curly-braces.js'))
 const remarkLintNoAltTextForImage = await import(path.join(adpDevsiteUtilsDir, 'linters', 'remark-lint-no-alt-text-for-image.js'))
@@ -240,7 +240,7 @@ function createProcessor(includeFrontmatterCheck) {
       .use(remarkLintNoHiddenTableCell, ['error'])
       .use(remarkLintNoAngleBrackets.default, ['error'])
       .use(remarkLintNoHtmlComments.default, ['error'])
-      .use(remarkLintNoBrInTables.default, ['error'])
+      .use(remarkLintNoUnescapedBr.default, ['error'])
       .use(remarkLintNoBlockInList.default, ['error']);
 
     // Only add frontmatter check if not skipping
